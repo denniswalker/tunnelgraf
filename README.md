@@ -54,7 +54,7 @@ nexthop:
         # Example using specific credentials
         host: node1
         user: [some user]
-	    pass: [some pass]
+        pass: [some pass]
         port: 22
         localbindport: 2224
       - id: baseline_node
@@ -63,9 +63,9 @@ nexthop:
         port: 22
         localbindport: 2225
       - id: another_endpoint
-        host: api-gw-service-nmn.local
+        host: gw-service.local
         hosts_file_entries:
-          - api-gw-service.local
+          - gw-service.local
           - thisother.fqdn.domain.local
         port: 443
         localbindport: 8443

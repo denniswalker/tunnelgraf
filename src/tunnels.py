@@ -1,8 +1,11 @@
+import python_hosts
 import yaml
 import os
+import sys
 from .tunnel_builder import TunnelBuilder
 from .tunnel_config import TunnelConfig
 from time import sleep
+from python_hosts import Hosts, HostsEntry, HostsException
 
 
 class Tunnels:
@@ -15,10 +18,13 @@ class Tunnels:
         self._config_file: str = config_file
         self.config: dict | list = self._get_config()
         self.tunnels: list[TunnelBuilder] = []
+        self.original_hosts = Hosts()
+        self.new_hosts = Hosts()
         self.make_tunnels()
+        self._write_changes_to_hosts_file()
         try:
             print("Tunnels started. Press Ctrl-C to stop.")
-            # On a mac, this can be verified by checking open ports with 'netstat -anvp tcp | awk 'NR<3 || /LISTEN/'
+            # INFO: on mac, check open ports 'netstat -anvp tcp | awk 'NR<3 || /LISTEN/'
             while True:
                 sleep(5)
         except KeyboardInterrupt:
@@ -53,6 +59,30 @@ class Tunnels:
         nhcfg["port"] = this_parent_tunnel.tunnel.local_bind_address[1]
         return nhcfg
 
+    def _write_changes_to_hosts_file(self):
+        """Writes the changes to the hosts file."""
+        print("Updating hosts file...")
+        try:
+            self.new_hosts.write()
+        except HostsException as e:
+            print(
+                f"Error writing hosts file. Are you root or do you own the hosts file? Error: {e}"
+            )
+            sys.exit(1)
+
+    def _add_to_hosts(self, hosts: list, what_for: str) -> None:
+        """Adds a host to the hosts list."""
+        if len(hosts) > 0:
+            for host in hosts:
+                print(f"Adding {host} to hosts file.")
+                this_entry = HostsEntry(
+                    address="127.0.0.1",
+                    names=[host],
+                    entry_type="ipv4",
+                    comment=f"pytunnels entry for {what_for}",
+                )
+                self.new_hosts.add(entries=[this_entry], allow_address_duplication=True)
+
     def make_tunnels(self):
         """Creates tunnels from the config file."""
         if isinstance(self.config, list):
@@ -66,6 +96,7 @@ class Tunnels:
         if "nexthop" in this_config.keys() and isinstance(this_config["nexthop"], dict):
             tc = TunnelConfig(this_config)
             self.tunnels.append(TunnelBuilder(tc))
+            self._add_to_hosts(tc.hosts_file_entries, tc.nexthop_id)
             print(
                 f"Created tunnel {tc.local_ip}:{tc.local_port} to {tc.remote_endpoint}:{tc.remote_port}"
             )
@@ -86,6 +117,8 @@ class Tunnels:
 
     def stop_tunnels(self):
         """Stops all tunnels."""
+        print("Restoring original hosts file.")
+        self.original_hosts.write()
         print("Stopping tunnels...")
         for this_tunnel in list(reversed(self.tunnels)):
             print(

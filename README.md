@@ -13,6 +13,13 @@ Lastpass, making sharing connection schemes more secure.
 Finally, it can also populate host file entries to redirect DNS names to
 localhost.
 
+## Advantages
+
+- Connect to arrays of sibling endpoints at any level, e.g. application servers, databases, etc.
+- Hide credentials and hostnames so connection schemas can be securely shared with peers.
+- Look up local bind ports in external automation tooling in the YAML config file.
+- Populate hosts file entries in /etc/hosts and access endpoints requiring domain names in request headers.
+
 ## Getting Started
 
 ---
@@ -24,6 +31,8 @@ localhost.
    example below).
 1. Recommended: For personal computers, change the permissions of the hosts file
    to make it writeable by your user. e.g. `sudo shown $(whoami) /etc/hosts`
+1. Optional: If you want to use Lastpass for secrets management, install lastpass-cli.
+   e.g. `brew install lastpass-cli`
 1. Run `pytunnels ./[your config].yml`
 
 Pytunnels will occupy the session until ctrl-c is pressed.

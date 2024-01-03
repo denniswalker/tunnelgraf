@@ -30,7 +30,7 @@ localhost.
 1. Create a yaml file describing the connection hierarchy (reference the config
    example below).
 1. Recommended: For personal computers, change the permissions of the hosts file
-   to make it writeable by your user. e.g. `sudo shown $(whoami) /etc/hosts`
+   to make it writeable by your user. e.g. `sudo chown $(whoami) /etc/hosts`
 1. Optional: If you want to use Lastpass for secrets management, install lastpass-cli.
    e.g. `brew install lastpass-cli`
 1. Run `pytunnels ./[your config].yml`

@@ -25,6 +25,7 @@ localhost.
 ---
 
 1. Checkout the repo
+1. Install dependencies `pip3 install -r requirements.txt`
 1. Run `pyinstaller --onefile ./pytunnels`.
 1. Move the executable in the 'dist' directory into your PATH.
 1. Create a yaml file describing the connection hierarchy (reference the config

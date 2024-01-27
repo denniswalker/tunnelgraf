@@ -22,5 +22,7 @@ class LastpassSecret:
         stdout = result.stdout.decode("utf-8").strip()
         stderr = result.stderr.decode("utf-8").strip()
         if result.returncode != 0:
-            raise Exception(f"Error retrieving secret: {stdout} - {stderr}")
+            raise Exception(
+                f"Error retrieving secret {self.secret_name}: {stdout} - {stderr}"
+            )
         return json.loads(stdout)[0]

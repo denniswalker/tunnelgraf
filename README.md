@@ -1,13 +1,13 @@
-# Pytunnels - Hierarchical SSH tunnel management
+# Tunnelgraf - Hierarchical SSH tunnel management
 
 ---
 
-Pytunnels is a CLI tool for connecting through a variable number of Bastion
+Tunnelgraf is a CLI tool for connecting through a variable number of Bastion
 hosts to many remote server endpoints, exposing them all as local ports. Its
 intuitive YAML definitions enable version-controlled management of complex
 hierarchical connections.
 
-Pytunnels supports the lookup of credentials and hostname/IP endpoints via
+Tunnelgraf supports the lookup of credentials and hostname/IP endpoints via
 Lastpass, making sharing connection schemes more secure.
 
 Finally, it can also populate host file entries to redirect DNS names to
@@ -26,17 +26,18 @@ localhost.
 
 1. Checkout the repo
 1. Install dependencies `pip3 install -r requirements.txt`
-1. Run `pyinstaller --onefile ./pytunnels`.
+1. Run `pyinstaller --onefile ./tunnelgraf`.
 1. Move the executable in the 'dist' directory into your PATH.
 1. Create a yaml file describing the connection hierarchy (reference the config
    example below).
 1. Recommended: For personal computers, change the permissions of the hosts file
-   to make it writeable by your user. e.g. `sudo chown $(whoami) /etc/hosts`
+   to make it writeable by your user, e.g. `sudo chown $(whoami) /etc/hosts`. Also,
+   make a backup copy of your hosts file, as this is early software.
 1. Optional: If you want to use Lastpass for secrets management, install lastpass-cli.
    e.g. `brew install lastpass-cli`
-1. Run `pytunnels ./[your config].yml`
+1. Run `tunnelgraf ./[your config].yml`
 
-Pytunnels will occupy the session until ctrl-c is pressed.
+Tunnelgraf will occupy the session until ctrl-c is pressed.
 
 ## Example Config File
 

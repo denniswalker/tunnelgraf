@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field, validator
-from .lastpass_secrets import LastpassSecret
+from tunnelgraf.lastpass_secrets import LastpassSecret
 
 
 class TunnelDefinition(BaseModel):

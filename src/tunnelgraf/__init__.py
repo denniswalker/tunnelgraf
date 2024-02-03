@@ -1,5 +1,5 @@
-from .tunnels import Tunnels
 import sys
+from tunnelgraf.tunnels import Tunnels
 
 
 def main() -> None:

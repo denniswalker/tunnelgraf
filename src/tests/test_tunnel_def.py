@@ -1,5 +1,4 @@
-import pytest
-from tunnel_definition import TunnelDefinition
+from tunnelgraf.tunnel_definition import TunnelDefinition
 
 
 def test_tunnel_definition_required_fields():

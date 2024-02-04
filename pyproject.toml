@@ -6,12 +6,12 @@ build-backend = "hatchling.build"
 name = "tunnelgraf"
 version = "0.1.1"
 dependencies = [
+  "click>=8.0.3",
   "sshtunnel>=0.4.0",
   "pyyaml>=6.0.1",
   "pyinstaller>=6.3.0",
   "python-hosts>=1.0.5",
   "pydantic>=2.5.3",
-  "pytest>=8.0.0",
 ]
 authors = [
   {name = "Dennis Walker", email = "denniswalker@me.com"},
@@ -47,7 +47,6 @@ classifiers = [
 
 [project.optional-dependencies]
 cli = [
-  "lastpass-python>=0.3.2",
   "mypy>=1.8.0"
 ]
 
@@ -60,5 +59,34 @@ Documentation = "https://github.com/denniswalker/tunnelgraf/blob/main/README.md"
 Repository = "https://github.com/denniswalker/tunnelgraf"
 Issues = "https://github.com/denniswalker/tunnelgraf/issues"
 
+[tool.hatch.envs.test]
+dependencies = [
+  "coverage[toml]",
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+]
 
-[tool]
+[tool.hatch.envs.test.scripts]
+run-coverage = "pytest --cov-config=pyproject.toml --cov=pkg --cov=tests"
+run = "run-coverage --no-cov"
+
+[tool.hatch.envs.style]
+detached = true
+dependencies = [
+  "flake8",
+  "black",
+  "isort",
+]
+
+[tool.hatch.envs.style.scripts]
+check = [
+  "flake8 .",
+  "black --check --diff .",
+  "isort --check-only --diff .",
+]
+fmt = [
+  "isort .",
+  "black .",
+  "check",
+]

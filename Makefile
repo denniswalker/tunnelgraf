@@ -25,6 +25,4 @@ dev:
 build:
 	hatch build
 
-publish:
-  hatch publish
-
+publish: hatch publish

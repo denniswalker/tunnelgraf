@@ -4,14 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tunnelgraf"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
-  "click>=8.0.3",
-  "sshtunnel>=0.4.0",
-  "pyyaml>=6.0.1",
-  "pyinstaller>=6.3.0",
-  "python-hosts>=1.0.5",
-  "pydantic>=2.5.3",
+  "click~=8.0.0",
+  "sshtunnel~=0.4.0",
+  "pyyaml~=6.0.0",
+  "python-hosts~=1.0.5",
+  "pydantic~=2.5.0",
 ]
 authors = [
   {name = "Dennis Walker", email = "denniswalker@me.com"},

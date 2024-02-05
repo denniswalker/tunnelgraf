@@ -24,10 +24,7 @@ localhost.
 
 ---
 
-1. Checkout the repo
-1. Install dependencies `pip3 install -r requirements.txt`
-1. Run `pyinstaller --onefile ./tunnelgraf`.
-1. Move the executable in the 'dist' directory into your PATH.
+1. Install tunnelgraf with pip `pip3 install tunnelgraf`
 1. Create a yaml file describing the connection hierarchy (reference the config
    example below).
 1. Recommended: For personal computers, change the permissions of the hosts file

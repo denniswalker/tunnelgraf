@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from tunnelgraf.lastpass_secrets import LastpassSecret
 
 
@@ -42,7 +42,7 @@ class TunnelDefinition(BaseModel):
             if self.sshpass is None:
                 self.sshpass = self._secret_data.secret_pass
 
-    @validator("host", "lastpass")
+    @field_validator("host", "lastpass")
     def check_at_least_one(cls, v):
         if v is None:
             raise ValueError("At least one of host or lastpass must be present")

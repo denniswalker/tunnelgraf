@@ -1,4 +1,6 @@
+import pytest
 from tunnelgraf.tunnel_definition import TunnelDefinition
+from pydantic import ValidationError
 
 
 def test_tunnel_definition_required_fields():
@@ -7,6 +9,17 @@ def test_tunnel_definition_required_fields():
     assert tunnel.id == "tunnel1"
     assert tunnel.port == 22
     assert tunnel.localbindport == 8080
+
+    # Test with incomplete data
+    without_localbindport_data = {"id": "tunnel1", "port": 22}
+    with pytest.raises(ValidationError):
+        TunnelDefinition(**without_localbindport_data)
+    without_port_data = {"id": "tunnel1", "localbindport": 8080}
+    with pytest.raises(ValidationError):
+        TunnelDefinition(**without_port_data)
+    without_id_data = {"port": 22, "localbindport": 8080}
+    with pytest.raises(ValidationError):
+        TunnelDefinition(**without_id_data)
 
 
 def test_tunnel_definition_optional_fields():
@@ -17,15 +30,13 @@ def test_tunnel_definition_optional_fields():
         "host": "example.com",
         "sshuser": "user",
         "sshpass": "password",
-        "lastpass": "secret",
-        "hosts_file_entry": "127.0.0.1 localhost",
+        "hosts_file_entry": "example.local",
         "nexthop": {"id": "tunnel2", "port": 22, "localbindport": 8081},
     }
     tunnel = TunnelDefinition(**data)
     assert tunnel.host == "example.com"
     assert tunnel.sshuser == "user"
     assert tunnel.sshpass == "password"
-    assert tunnel.lastpass == "secret"
-    assert tunnel.hosts_file_entry == "127.0.0.1 localhost"
+    assert tunnel.hosts_file_entry == "example.local"
     assert tunnel.nexthop.id == "tunnel2"
     assert tunnel.nexthop.port == 22

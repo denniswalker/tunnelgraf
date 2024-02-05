@@ -90,3 +90,19 @@ fmt = [
   "black .",
   "check",
 ]
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
+]
+defineConstant = { DEBUG = true }
+
+reportMissingImports = true
+reportMissingTypeStubs = true
+
+executionEnvironments = [
+  { root = "src/tunnelgraf" },
+  { root = "src/tests" },
+  { root = "src" }
+]

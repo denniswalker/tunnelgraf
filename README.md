@@ -52,30 +52,32 @@ id: primary_bastion
 port: 22
 # Retrieves the hostname, user, and password
 lastpass: primary_bastion
+localbindport: 2222
 nexthop:
   id: secondary_bastion
   port: 22
-  lastpass: secondary_bastion
-  localbindport: 2222
+  sshuser: <A User>
+  sshpass: <A password>
+  localbindport: 2223
   nexthop:
     id: tertiary_bastion
     port: 22
     lastpass: tertiary_bastion
-    localbindport: 2223
+    localbindport: 2224
     hosts_file_entry: this.fqdn.domain.local
-    nexthop:
+    nexthops:
       - id: node1
         # Example using specific credentials
         host: node1
-        user: [some user]
-        pass: [some pass]
+        sshuser: <some user>
+        sshpass: <some pass>
         port: 22
-        localbindport: 2224
+        localbindport: 2225
       - id: baseline_node
         host: baseline_node
         lastpass: baseline_node
         port: 22
-        localbindport: 2225
+        localbindport: 2226
       - id: another_endpoint
         host: gw-service.local
         hosts_file_entries:

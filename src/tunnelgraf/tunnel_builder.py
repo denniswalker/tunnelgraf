@@ -1,5 +1,7 @@
 """ Creates an ssh tunnel to remote device exposing ports 22 and 443."""
+
 from sshtunnel import SSHTunnelForwarder
+
 from tunnelgraf.tunnel_definition import TunnelDefinition
 
 

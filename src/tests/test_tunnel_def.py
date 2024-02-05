@@ -1,6 +1,7 @@
 import pytest
-from tunnelgraf.tunnel_definition import TunnelDefinition
 from pydantic import ValidationError
+
+from tunnelgraf.tunnel_definition import TunnelDefinition
 
 
 def test_tunnel_definition_required_fields():

@@ -1,9 +1,11 @@
-import yaml
 import os
 import sys
-from tunnelgraf.tunnel_builder import TunnelBuilder
 from time import sleep
+
+import yaml
 from python_hosts import Hosts, HostsEntry, HostsException
+
+from tunnelgraf.tunnel_builder import TunnelBuilder
 from tunnelgraf.tunnel_definition import TunnelDefinition
 
 

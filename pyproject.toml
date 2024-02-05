@@ -45,11 +45,6 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 
-[project.optional-dependencies]
-cli = [
-  "mypy>=1.8.0"
-]
-
 [project.scripts]
 tunnelgraf = "tunnelgraf:main"
 

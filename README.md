@@ -15,23 +15,29 @@ localhost.
 
 ## Advantages
 
-- Connect to arrays of sibling endpoints at any level, e.g. application servers, databases, etc.
-- Hide credentials and hostnames so connection schemas can be securely shared with peers.
-- Look up local bind ports in external automation tooling in the YAML config file.
-- Populate hosts file entries in /etc/hosts and access endpoints requiring domain names in request headers.
+- Connect to arrays of sibling endpoints at any level, e.g. application servers,
+  databases, etc.
+- Hide credentials and hostnames so connection schemas can be securely shared
+  with peers.
+- Look up local bind ports in external automation tooling in the YAML config
+  file.
+- Populate hosts file entries in /etc/hosts and access endpoints requiring
+  domain names in request headers.
 
 ## Getting Started
 
 ---
 
-1. Install tunnelgraf with pip `pip3 install tunnelgraf`
+1. Install tunnelgraf with pip `pip3 install tunnelgraf`. If you run into
+   dependency conflicts with other packages, use pipx insteadi, e.g.
+   `pipx install tunnelgraf`.
 1. Create a yaml file describing the connection hierarchy (reference the config
    example below).
 1. Recommended: For personal computers, change the permissions of the hosts file
-   to make it writeable by your user, e.g. `sudo chown $(whoami) /etc/hosts`. Also,
-   make a backup copy of your hosts file, as this is early software.
-1. Optional: If you want to use Lastpass for secrets management, install lastpass-cli.
-   e.g. `brew install lastpass-cli`
+   to make it writeable by your user, e.g. `sudo chown $(whoami) /etc/hosts`.
+   Also, make a backup copy of your hosts file, as this is early software.
+1. Optional: If you want to use Lastpass for secrets management, install
+   lastpass-cli. e.g. `brew install lastpass-cli`
 1. Run `tunnelgraf ./[your config].yml`
 
 Tunnelgraf will occupy the session until ctrl-c is pressed.

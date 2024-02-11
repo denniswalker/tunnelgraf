@@ -7,7 +7,7 @@ class LastpassSecret:
 
     def __init__(self, secret_name):
         self.secret_name = secret_name
-        print(f"Retrieving secret: {self.secret_name}")
+        print(f"INFO: Retrieving secret: {self.secret_name}")
         self.secret_response = self._get_secret()
         self.name = self.secret_response["name"]
         self.secret_user = self.secret_response["username"]

@@ -1,6 +1,7 @@
 import os
 import sys
 from time import sleep
+from io import TextIOWrapper
 
 import yaml
 from python_hosts import Hosts, HostsEntry, HostsException
@@ -15,8 +16,8 @@ class Tunnels:
     and binding it to a local port, as specified in the provided config file.
     """
 
-    def __init__(self, config_file: str):
-        self._config_file: str = config_file
+    def __init__(self, config_file: TextIOWrapper):
+        self._config_file: TextIOWrapper = config_file.read()
         self.config: dict | list = self._get_config()
         self.tunnel_defs: TunnelDefinition | list[TunnelDefinition] = TunnelDefinition(
             **self.config
@@ -51,8 +52,7 @@ class Tunnels:
 
     def _get_config(self):
         """Returns the config file."""
-        with open(self.config_file) as f:
-            return yaml.load(f, Loader=yaml.FullLoader)
+        return yaml.load(self.config_file, Loader=yaml.FullLoader)
 
     def _update_bastion_address(
         self, nexthop_config: TunnelDefinition, this_parent_tunnel: TunnelBuilder

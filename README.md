@@ -39,7 +39,7 @@ localhost.
    Also, make a backup copy of your hosts file, as this is early software.
 1. Optional: If you want to use Lastpass for secrets management, install
    lastpass-cli. e.g. `brew install lastpass-cli`
-1. Run `tunnelgraf ./[your config].yml`
+1. Run `tunnelgraf connect ./[your config].yml`
 
 Tunnelgraf will occupy the session until ctrl-c is pressed.
 

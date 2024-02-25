@@ -1,3 +1,3 @@
-from tunnelgraf import main
+from tunnelgraf import cli
 
-main()
+cli(auto_envvar_prefix="TUNNELGRAF", prog_name="tunnelgraf")

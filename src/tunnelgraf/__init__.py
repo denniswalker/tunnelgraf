@@ -1,18 +1,12 @@
 import click
 from tunnelgraf.tunnels import Tunnels
 from io import TextIOWrapper
-import tomllib
-
-
-with open("pyproject.toml", "rb") as f:
-    app_data = tomllib.load(f)["project"]
+from importlib.metadata import version
 
 
 @click.group()
 @click.version_option(
-    package_name=app_data["name"],
-    prog_name=app_data["name"],
-    version=app_data["version"],
+    package_name="tunnelgraf", prog_name="tunnelgraf", version=version("tunnelgraf")
 )
 @click.pass_context
 def cli(ctx) -> None:

@@ -11,6 +11,10 @@ Tunnelgraf supports the lookup of credentials and hostname/IP endpoints via your
 local ssh config file (~/.ssh/config) or Lastpass, making sharing connection
 schemes more secure.
 
+Tunnelgraf supports including one config file into another to keep the connection
+profiles DRY when managing many similar environments, which is common in most
+SDLCs.
+
 Finally, it can also populate host file entries to redirect DNS names to
 localhost.
 
@@ -88,7 +92,7 @@ nexthop:
         localbindport: 8443
 ```
 
-In the above example pytunnels opens nested ssh tunnels for the primary,
+In the above example tunnelgraf opens nested ssh tunnels for the primary,
 secondary, and tertiary bastion hosts. It then connects to the final 3 endpoints
 through the tertiary endpoint.
 

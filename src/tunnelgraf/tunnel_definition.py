@@ -4,12 +4,14 @@ from pydantic import BaseModel, Field
 from paramiko import SSHConfig, SSHConfigDict
 from pathlib import Path
 from os import path
-
+from deepmerge import always_merger
+import yaml
 from tunnelgraf.lastpass_secrets import LastpassSecret
 
 
 class TunnelDefinition(BaseModel):
     id: str = Field(..., alias="id")  # Required field
+    include: Optional[str] = Field(None, alias="include")  # Not required
     host: Optional[str] = Field(None, alias="host")  # Not Required
     port: Optional[int] = Field(22, alias="port")  # Not Required
     localbindaddress: Optional[str] = Field("127.0.0.1", alias="localbindaddress")
@@ -36,6 +38,10 @@ class TunnelDefinition(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
+        self._included_vars = self.fetch_include_values()
+        if self._included_vars:
+            always_merger.merge(self._included_vars, data)
+            super().__init__(**self._included_vars)
 
         # Load defaults from the ssh config file
         self._ssh_config = SSHConfig()
@@ -48,6 +54,13 @@ class TunnelDefinition(BaseModel):
 
         # Validate the model
         self.validate()
+
+    def fetch_include_values(self) -> None | dict:
+        if self.include:
+            f = open(self.include, "r")
+            return yaml.safe_load(f)
+        else:
+            return None
 
     def get_ssh_config(self) -> None:
         """Looks up the ssh config file for the host, port, and credentials."""

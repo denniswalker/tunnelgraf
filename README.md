@@ -92,14 +92,65 @@ In the above example pytunnels opens nested ssh tunnels for the primary,
 secondary, and tertiary bastion hosts. It then connects to the final 3 endpoints
 through the tertiary endpoint.
 
+## Includes
+
+When working across SDLC environments, nexthop values are often the same or very
+similar. Config files can include one another to make standardization DRY and
+easier to manage.
+
+Given the following two files:
+
+staging_env.yml
+
+```yaml
+---
+id: staging_env_bastion
+port: 22
+sshuser: <some user>
+sshkeyfile: <path to some key file>
+localbindport: 2223
+include: defaults.yml
+```
+
+defaults.yml
+
+```yaml
+---
+localbindport: 2224 #illustrating override logic
+nexthops:
+  - id: an_app_node
+    host: <some fqdn>
+    port: 443
+    localbindport: 8443
+    hosts_file_entry: <some fqdn>
+```
+
+the resulting configuration is
+
+```yaml
+---
+id: staging_env_bastion
+port: 22
+sshuser: <some user>
+sshkeyfile: <path to some key file>
+localbindport: 2223 # top layer takes precedence
+nexthops:
+  - id: an_app_node
+    host: <some fqdn>
+    port: 443
+    localbindport: 8443
+    hosts_file_entry: <some fqdn>
+```
+
 ## Configuration Precedence
 
 Configuration data is merged from three data sources with the following
 precedence.
 
 1. The yml file data has the top priority.
-2. The ssh config file has the next priority.
-3. Data from Lastpass has the last priority.
+2. Any included yml files has the second priority.
+3. The ssh config file has the third priority.
+4. Data from Lastpass has the last priority.
 
 An example scenario where credential come from lastpass, the host comes from the
 ssh config even though it is also in lastpass, and the port is overridden in the

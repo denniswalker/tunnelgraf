@@ -24,8 +24,7 @@ localhost.
   databases, etc.
 - Hide credentials and hostnames so connection schemas can be securely shared
   with peers.
-- Look up local bind ports in external automation tooling in the YAML config
-  file.
+- Look up local bind ports in external automation tooling.
 - Populate hosts file entries in /etc/hosts and access endpoints requiring
   domain names in request headers.
 
@@ -152,7 +151,7 @@ Configuration data is merged from three data sources with the following
 precedence.
 
 1. The yml file data has the top priority.
-2. Any included yml files has the second priority.
+2. Any included yml files have the second priority.
 3. The ssh config file has the third priority.
 4. Data from Lastpass has the last priority.
 
@@ -161,3 +160,27 @@ ssh config even though it is also in lastpass, and the port is overridden in the
 yml file.
 
 Separately, if an sshkey file is specified, it takes priority over the password.
+
+## Print the Resulting Local Configuration in JSON
+
+The resulting configuration can be printed to json by running the "show"
+subcommand. This is useful for dynamically looking up connection details from
+scripts or orchestration tools.
+
+`tunnelgraf show <config_file> -t <tunnel id>`
+
+```json
+[
+  {
+    "id": "an_app_node",
+    "host": "127.0.0.1",
+    "port": 8443,
+    "hosts_file_entry": "<some fqdn>"
+  }
+]
+```
+
+If no tunnel id is specified, all tunnels are displayed.
+
+If `--show-credentials` is added, the credentials used when connecting are also
+printed.

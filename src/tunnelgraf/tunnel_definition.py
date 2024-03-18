@@ -65,7 +65,7 @@ class TunnelDefinition(BaseModel):
     def get_ssh_config(self) -> None:
         """Looks up the ssh config file for the host, port, and credentials."""
         this_ssh_config: SSHConfigDict = self._ssh_config.lookup(self.id)
-        print(f"INFO: ssh config values for {self.id} are {this_ssh_config}")
+        # print(f"INFO: ssh config values for {self.id} are {this_ssh_config}")
         if self.sshuser is None:
             self.sshuser = this_ssh_config.get("user", None)
         if self.sshpass is None:

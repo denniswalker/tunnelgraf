@@ -60,16 +60,20 @@ def urls(config_file: TextIOWrapper) -> None:
     tunnels = Tunnels(config_file, connect_tunnels=False).tunnel_configs
     links: dict = {}
     for tunnel in tunnels:
+        links[tunnel["id"]]: list = []
         if "hosts_file_entry" in tunnel.keys() and tunnel["hosts_file_entry"]:
             host = tunnel["hosts_file_entry"]
-            links[tunnel["id"]] = f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+            links[tunnel["id"]].append(
+                f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+            )
         elif "hosts_file_entries" in tunnel.keys() and tunnel["hosts_file_entries"]:
             for hosts_entry in tunnel["hosts_file_entries"]:
-                links[tunnel["id"]]: list = []
                 links[tunnel["id"]].append(
                     f"{tunnel['protocol']}://{hosts_entry}:{tunnel['port']}"
                 )
         else:
             host = tunnel["host"]
-            links[tunnel["id"]] = f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+            links[tunnel["id"]].append(
+                f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+            )
     print(json.dumps(links))

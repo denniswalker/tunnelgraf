@@ -50,3 +50,26 @@ def show(config_file: TextIOWrapper, tunnel_id: str, show_credentials: bool) -> 
         print(json.dumps(this_tunnel))
     else:
         print(json.dumps(tunnels))
+
+
+@cli.command(
+    help="Print the URLs to access each tunnel. Protocol is displayed as ssh unless specified."
+)
+@click.argument("config_file", envvar="TUNNELGRAF_CONFIG", type=click.File("r"))
+def urls(config_file: TextIOWrapper) -> None:
+    tunnels = Tunnels(config_file, connect_tunnels=False).tunnel_configs
+    links: dict = {}
+    for tunnel in tunnels:
+        if "hosts_file_entry" in tunnel.keys() and tunnel["hosts_file_entry"]:
+            host = tunnel["hosts_file_entry"]
+            links[tunnel["id"]] = f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+        elif "hosts_file_entries" in tunnel.keys() and tunnel["hosts_file_entries"]:
+            for hosts_entry in tunnel["hosts_file_entries"]:
+                links[tunnel["id"]]: list = []
+                links[tunnel["id"]].append(
+                    f"{tunnel['protocol']}://{hosts_entry}:{tunnel['port']}"
+                )
+        else:
+            host = tunnel["host"]
+            links[tunnel["id"]] = f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+    print(json.dumps(links))

@@ -16,6 +16,7 @@ class TunnelDefinition(BaseModel):
     port: Optional[int] = Field(22, alias="port")  # Not Required
     localbindaddress: Optional[str] = Field("127.0.0.1", alias="localbindaddress")
     localbindport: int = Field(..., alias="localbindport")  # Required field
+    protocol: Optional[str] = Field("ssh", alias="protocol")  # Not required
     sshuser: Optional[str] = Field(None, alias="sshuser")  # Not required
     sshpass: Optional[str] = Field(None, alias="sshpass")  # Not required
     sshkeyfile: Optional[str] = Field(None, alias="sshkeyfile")  # Not required

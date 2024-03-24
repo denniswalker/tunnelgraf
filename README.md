@@ -11,9 +11,9 @@ Tunnelgraf supports the lookup of credentials and hostname/IP endpoints via your
 local ssh config file (~/.ssh/config) or Lastpass, making sharing connection
 schemes more secure.
 
-Tunnelgraf supports including one config file into another to keep the connection
-profiles DRY when managing many similar environments, which is common in most
-SDLCs.
+Tunnelgraf supports including one config file into another to keep the
+connection profiles DRY when managing many similar environments, which is common
+in most SDLCs.
 
 Finally, it can also populate host file entries to redirect DNS names to
 localhost.
@@ -184,3 +184,18 @@ If no tunnel id is specified, all tunnels are displayed.
 
 If `--show-credentials` is added, the credentials used when connecting are also
 printed.
+
+## Print URLs
+
+To get json dump of the resulting URLs, run `tunnelgraf urls <config_file>`.
+This will show a default prefix of "ssh://" unless a "protocol" value is
+specified in the data. It will show the dns provided in hosts_file_entry or
+hosts_file_entries if provided, otherwise, the IP address is shown.
+
+```json
+{
+  "jumpbox": ["ssh://<ip address>:22"],
+  "jumpbox2": ["ssh://<domain name>:2224"],
+  "load_balancer": ["https://<fqdn>.local:8443", "https://<fqdn2>:8443"]
+}
+```

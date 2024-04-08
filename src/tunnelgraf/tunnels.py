@@ -1,7 +1,7 @@
 import os
 import sys
 from time import sleep
-from io import TextIOWrapper
+from pathlib import Path
 
 import yaml
 from python_hosts import Hosts, HostsEntry, HostsException
@@ -18,12 +18,14 @@ class Tunnels:
 
     def __init__(
         self,
-        config_file: TextIOWrapper,
+        config_file_path: Path,
         connect_tunnels: bool = True,
         show_credentials: bool = False,
     ):
-        self._config_file: str = config_file.read()
+        with config_file_path.open() as cf:
+            self._config_file: str = cf.read()
         self.config: dict | list = self._get_config()
+        self.config["config_file_path"] = config_file_path.parent
         self.tunnel_defs: TunnelDefinition | list[TunnelDefinition] = TunnelDefinition(
             **self.config
         )

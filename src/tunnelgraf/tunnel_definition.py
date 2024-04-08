@@ -12,6 +12,9 @@ from tunnelgraf.lastpass_secrets import LastpassSecret
 class TunnelDefinition(BaseModel):
     id: str = Field(..., alias="id")  # Required field
     include: Optional[str] = Field(None, alias="include")  # Not required
+    config_file_path: Optional[Path] = Field(
+        None, alias="config_file_path"
+    )  # Not required
     host: Optional[str] = Field(None, alias="host")  # Not Required
     port: Optional[int] = Field(22, alias="port")  # Not Required
     localbindaddress: Optional[str] = Field("127.0.0.1", alias="localbindaddress")
@@ -57,8 +60,11 @@ class TunnelDefinition(BaseModel):
         self.validate()
 
     def fetch_include_values(self) -> None | dict:
-        if self.include:
-            f = open(self.include, "r")
+        if self.include and self.config_file_path is not None:
+            if path.isabs(self.include):
+                f = open(self.include, "r")
+            else:
+                f = open(self.config_file_path.joinpath(self.include), "r")
             return yaml.safe_load(f)
         else:
             return None

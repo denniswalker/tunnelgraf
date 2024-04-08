@@ -28,7 +28,7 @@ clean: ## Clean the project
 	find . -name __pycache__ -delete
 
 dev: ## Run the app
-	hatch run python3 src/tunnelgraf/
+	hatch run python3 src/tunnelgraf/ connect ./test.yml
 
 build: ## Build the package
 	hatch build

@@ -12,7 +12,7 @@ from tunnelgraf.lastpass_secrets import LastpassSecret
 class TunnelDefinition(BaseModel):
     id: str = Field(..., alias="id")  # Required field
     include: Optional[str] = Field(None, alias="include")  # Not required
-    config_file_path: Optional[Path] = Field(
+    config_file_path: Optional[str] = Field(
         None, alias="config_file_path"
     )  # Not required
     host: Optional[str] = Field(None, alias="host")  # Not Required
@@ -64,7 +64,7 @@ class TunnelDefinition(BaseModel):
             if path.isabs(self.include):
                 f = open(self.include, "r")
             else:
-                f = open(self.config_file_path.joinpath(self.include), "r")
+                f = open(path.join(self.config_file_path, self.include), "r")
             return yaml.safe_load(f)
         else:
             return None

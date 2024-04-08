@@ -25,7 +25,7 @@ class Tunnels:
         with config_file_path.open() as cf:
             self._config_file: str = cf.read()
         self.config: dict | list = self._get_config()
-        self.config["nexthop"]["config_file_path"] = config_file_path.parent
+        self.config["nexthop"]["config_file_path"] = str(config_file_path.parent)
         self.tunnel_defs: TunnelDefinition | list[TunnelDefinition] = TunnelDefinition(
             **self.config
         )

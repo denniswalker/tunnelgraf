@@ -123,9 +123,9 @@ class Tunnels:
 
         self._add_to_processed_configs(this_tunnel_def)
         if this_tunnel_def.nexthop is not None:
-            if this_tunnel_def.nexthop.hostlookup is not None:
-                this_tunnel_def.nexthop.host = self._lookup_host(this_tunnel_def)
             if self._connect_tunnels:
+                if this_tunnel_def.nexthop.hostlookup is not None:
+                    this_tunnel_def.nexthop.host = self._lookup_host(this_tunnel_def)
                 self.tunnels.append(TunnelBuilder(this_tunnel_def))
                 tc = self.tunnels[-1].tunnel
                 print(

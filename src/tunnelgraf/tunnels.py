@@ -93,11 +93,17 @@ class Tunnels:
             sys.exit(1)
 
     def _add_to_hosts(
-        self, what_for: str, hosts: list, this_host: str | None = None
+        self,
+        what_for: str,
+        hosts: list,
+        this_host: str | None = None,
+        this_host_lookup: str | None = None,
     ) -> None:
         """Adds a host to the hosts list."""
         if this_host is not None:
             hosts.append(this_host)
+        if this_host_lookup is not None:
+            hosts.append(this_host_lookup)
         if len(hosts) > 0:
             for host in hosts:
                 if self._connect_tunnels:
@@ -135,6 +141,7 @@ class Tunnels:
                 this_tunnel_def.nexthop.id,
                 this_tunnel_def.nexthop.hosts_file_entries,
                 this_tunnel_def.nexthop.hosts_file_entry,
+                this_tunnel_def.nexthop.hostlookup,
             )
 
             nexthop_config = self._update_bastion_address(this_tunnel_def.nexthop)

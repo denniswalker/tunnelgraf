@@ -23,6 +23,8 @@ class TunnelDefinition(BaseModel):
     sshuser: Optional[str] = Field(None, alias="sshuser")  # Not required
     sshpass: Optional[str] = Field(None, alias="sshpass")  # Not required
     sshkeyfile: Optional[str] = Field(None, alias="sshkeyfile")  # Not required
+    hostlookup: Optional[str] = Field(None, alias="hostlookup")  # Not required
+    nameserver: Optional[str] = Field(None, alias="nameserver")  # Not required
     lastpass: Optional[str] = Field(
         None, alias="lastpass"
     )  # Required or None allowed with alias

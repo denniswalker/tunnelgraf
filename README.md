@@ -199,3 +199,26 @@ hosts_file_entries if provided, otherwise, the IP address is shown.
   "load_balancer": ["https://<fqdn>.local:8443", "https://<fqdn2>:8443"]
 }
 ```
+
+## Resolve Remote DNS
+
+Often, especially in cloud/kubernetes environments, the remote IP is unknown and
+the nameserver to resolve it with (e.g. coredns) is not configured in the remote
+host's dns client configuration. In such examples, use "hostlookup" and
+"nameserver" to dynamically fetch the remote IP address of the endpoint.
+
+```yaml
+---
+id: staging_env_bastion
+port: 22
+sshuser: <some user>
+sshkeyfile: <path to some key file>
+localbindport: 2223 # top layer takes precedence
+nexthops:
+  - id: an_app_node
+    hostlookup: <some fqdn>
+    nameserver: <an address of the nameserver>
+    port: 443
+    localbindport: 8443
+    hosts_file_entry: <some fqdn>
+```

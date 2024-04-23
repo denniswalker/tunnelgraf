@@ -1,9 +1,9 @@
 import click
 from tunnelgraf.tunnels import Tunnels
-from io import TextIOWrapper
 from importlib.metadata import version
 import sys
 import json
+import pathlib
 
 
 @click.group()
@@ -18,13 +18,35 @@ def cli(ctx) -> None:
 @cli.command(
     help="Connect to the remote tunnels defined in a connection profile. Requires an argument containing the path to the connection profile, e.g `tunnelgraf connect <tunnelfile.yml>"
 )
-@click.argument("config_file", envvar="TUNNELGRAF_CONFIG", type=click.File("r"))
-def connect(config_file: TextIOWrapper) -> None:
+@click.argument(
+    "config_file",
+    envvar="TUNNELGRAF_CONFIG",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        path_type=pathlib.Path,
+    ),
+)
+def connect(config_file: pathlib.Path) -> None:
     Tunnels(config_file)
 
 
 @cli.command(help="Print the resulting tunnels configuration w/o connecting.")
-@click.argument("config_file", envvar="TUNNELGRAF_CONFIG", type=click.File("r"))
+@click.argument(
+    "config_file",
+    envvar="TUNNELGRAF_CONFIG",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        path_type=pathlib.Path,
+    ),
+)
 @click.option(
     "--tunnel-id",
     "-t",
@@ -37,7 +59,7 @@ def connect(config_file: TextIOWrapper) -> None:
     is_flag=True,
     default=False,
 )
-def show(config_file: TextIOWrapper, tunnel_id: str, show_credentials: bool) -> None:
+def show(config_file: pathlib.Path, tunnel_id: str, show_credentials: bool) -> None:
     tunnels = Tunnels(
         config_file, connect_tunnels=False, show_credentials=show_credentials
     ).tunnel_configs
@@ -55,8 +77,19 @@ def show(config_file: TextIOWrapper, tunnel_id: str, show_credentials: bool) -> 
 @cli.command(
     help="Print the URLs to access each tunnel. Protocol is displayed as ssh unless specified."
 )
-@click.argument("config_file", envvar="TUNNELGRAF_CONFIG", type=click.File("r"))
-def urls(config_file: TextIOWrapper) -> None:
+@click.argument(
+    "config_file",
+    envvar="TUNNELGRAF_CONFIG",
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        path_type=pathlib.Path,
+    ),
+)
+def urls(config_file: pathlib.Path) -> None:
     tunnels = Tunnels(config_file, connect_tunnels=False).tunnel_configs
     links: dict = {}
     for tunnel in tunnels:

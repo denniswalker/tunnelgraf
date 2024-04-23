@@ -1,13 +1,16 @@
 import os
 import sys
 from time import sleep
-from io import TextIOWrapper
+from pathlib import Path
 
 import yaml
 from python_hosts import Hosts, HostsEntry, HostsException
 
+from tunnelgraf import config
 from tunnelgraf.tunnel_builder import TunnelBuilder
 from tunnelgraf.tunnel_definition import TunnelDefinition
+from tunnelgraf.run_remote import RunCommand
+from tunnelgraf.nslookup import NSLookup
 
 
 class Tunnels:
@@ -18,12 +21,14 @@ class Tunnels:
 
     def __init__(
         self,
-        config_file: TextIOWrapper,
+        config_file_path: Path,
         connect_tunnels: bool = True,
         show_credentials: bool = False,
     ):
-        self._config_file: str = config_file.read()
+        with config_file_path.open() as cf:
+            self._config_file: str = cf.read()
         self.config: dict | list = self._get_config()
+        config.CONFIG_FILE_PATH = str(config_file_path.parent)
         self.tunnel_defs: TunnelDefinition | list[TunnelDefinition] = TunnelDefinition(
             **self.config
         )
@@ -89,11 +94,17 @@ class Tunnels:
             sys.exit(1)
 
     def _add_to_hosts(
-        self, what_for: str, hosts: list, this_host: str | None = None
+        self,
+        what_for: str,
+        hosts: list,
+        this_host: str | None = None,
+        this_host_lookup: str | None = None,
     ) -> None:
         """Adds a host to the hosts list."""
         if this_host is not None:
             hosts.append(this_host)
+        if this_host_lookup is not None:
+            hosts.append(this_host_lookup)
         if len(hosts) > 0:
             for host in hosts:
                 if self._connect_tunnels:
@@ -116,9 +127,12 @@ class Tunnels:
 
     def make_tunnel(self, this_tunnel_def: TunnelDefinition):
         """Creates a tunnel from the provided config."""
+
         self._add_to_processed_configs(this_tunnel_def)
         if this_tunnel_def.nexthop is not None:
             if self._connect_tunnels:
+                if this_tunnel_def.nexthop.hostlookup is not None:
+                    this_tunnel_def.nexthop.host = self._lookup_host(this_tunnel_def)
                 self.tunnels.append(TunnelBuilder(this_tunnel_def))
                 tc = self.tunnels[-1].tunnel
                 print(
@@ -128,6 +142,7 @@ class Tunnels:
                 this_tunnel_def.nexthop.id,
                 this_tunnel_def.nexthop.hosts_file_entries,
                 this_tunnel_def.nexthop.hosts_file_entry,
+                this_tunnel_def.nexthop.hostlookup,
             )
 
             nexthop_config = self._update_bastion_address(this_tunnel_def.nexthop)
@@ -140,6 +155,21 @@ class Tunnels:
                 nexthop_config.nexthops = None
                 nexthop_config = self._update_bastion_address(nexthop_config)
                 self.make_tunnel(nexthop_config)
+
+    def _lookup_host(self, this_tunnel_def: TunnelDefinition) -> str | None:
+        print(f"Looking up {this_tunnel_def.nexthop.hostlookup}...")
+        this_connection = RunCommand(
+            host=this_tunnel_def.host,
+            user=this_tunnel_def.sshuser,
+            identityfile=this_tunnel_def.sshkeyfile,
+            password=this_tunnel_def.sshpass,
+            port=this_tunnel_def.localbindport,
+        )
+        return NSLookup(
+            record=this_tunnel_def.nexthop.hostlookup,
+            nameserver=this_tunnel_def.nexthop.nameserver,
+            connection=this_connection,
+        ).host_ip
 
     def _add_to_processed_configs(self, this_tunnel_def: TunnelDefinition):
         """Adds a tunnel to the processed configs."""

@@ -7,6 +7,7 @@ from os import path
 from deepmerge import always_merger
 import yaml
 from tunnelgraf.lastpass_secrets import LastpassSecret
+from tunnelgraf import config
 
 
 class TunnelDefinition(BaseModel):
@@ -20,6 +21,8 @@ class TunnelDefinition(BaseModel):
     sshuser: Optional[str] = Field(None, alias="sshuser")  # Not required
     sshpass: Optional[str] = Field(None, alias="sshpass")  # Not required
     sshkeyfile: Optional[str] = Field(None, alias="sshkeyfile")  # Not required
+    hostlookup: Optional[str] = Field(None, alias="hostlookup")  # Not required
+    nameserver: Optional[str] = Field(None, alias="nameserver")  # Not required
     lastpass: Optional[str] = Field(
         None, alias="lastpass"
     )  # Required or None allowed with alias
@@ -57,8 +60,12 @@ class TunnelDefinition(BaseModel):
         self.validate()
 
     def fetch_include_values(self) -> None | dict:
-        if self.include:
-            f = open(self.include, "r")
+        if self.include and config.CONFIG_FILE_PATH is not None:
+            if path.isabs(self.include):
+                f = open(self.include, "r")
+            else:
+                self.include = path.join(config.CONFIG_FILE_PATH, self.include)
+                f = open(self.include, "r")
             return yaml.safe_load(f)
         else:
             return None

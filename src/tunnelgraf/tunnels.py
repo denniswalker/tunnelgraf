@@ -6,6 +6,7 @@ from pathlib import Path
 import yaml
 from python_hosts import Hosts, HostsEntry, HostsException
 
+from tunnelgraf import config
 from tunnelgraf.tunnel_builder import TunnelBuilder
 from tunnelgraf.tunnel_definition import TunnelDefinition
 from tunnelgraf.run_remote import RunCommand
@@ -27,7 +28,7 @@ class Tunnels:
         with config_file_path.open() as cf:
             self._config_file: str = cf.read()
         self.config: dict | list = self._get_config()
-        self.config["nexthop"]["config_file_path"] = str(config_file_path.parent)
+        config.CONFIG_FILE_PATH = str(config_file_path.parent)
         self.tunnel_defs: TunnelDefinition | list[TunnelDefinition] = TunnelDefinition(
             **self.config
         )

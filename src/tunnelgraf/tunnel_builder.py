@@ -43,7 +43,7 @@ class TunnelBuilder:
     def start_tunnel(self):
         """Starts tunnel."""
         print(
-            f"Tunneling through {self.tunnel_config.host}:{self.tunnel_config.port} to {self.tunnel_config.nexthop.host}:{self.tunnel_config.nexthop.port}..."
+            f"Tunnel ID: {self.tunnel_config.nexthop.id} - Tunneling through {self.tunnel_config.host}:{self.tunnel_config.port} to {self.tunnel_config.nexthop.host}:{self.tunnel_config.nexthop.port}..."
         )
         self.tunnel.start()
 

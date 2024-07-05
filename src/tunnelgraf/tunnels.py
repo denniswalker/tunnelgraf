@@ -108,7 +108,7 @@ class Tunnels:
         if len(hosts) > 0:
             for host in hosts:
                 if self._connect_tunnels:
-                    print(f"Adding {host} to hosts file.")
+                    print(f"{host} will be added to hosts file.")
                 this_entry = HostsEntry(
                     address="127.0.0.1",
                     names=[host],
@@ -136,7 +136,7 @@ class Tunnels:
                 self.tunnels.append(TunnelBuilder(this_tunnel_def))
                 tc = self.tunnels[-1].tunnel
                 print(
-                    f"Created tunnel {this_tunnel_def.id}: {tc.local_bind_host}:{tc.local_bind_port} to {tc._remote_binds[0][0]}:{tc._remote_binds[0][1]}"
+                    f"Tunnel ID: {this_tunnel_def.nexthop.id} - Created {tc.local_bind_host}:{tc.local_bind_port} to {tc._remote_binds[0][0]}:{tc._remote_binds[0][1]}"
                 )
             self._add_to_hosts(
                 this_tunnel_def.nexthop.id,
@@ -157,7 +157,9 @@ class Tunnels:
                 self.make_tunnel(nexthop_config)
 
     def _lookup_host(self, this_tunnel_def: TunnelDefinition) -> str | None:
-        print(f"Looking up {this_tunnel_def.nexthop.hostlookup}...")
+        print(
+            f"Tunnel ID: {this_tunnel_def.nexthop.id} - Looking up {this_tunnel_def.nexthop.hostlookup}..."
+        )
         this_connection = RunCommand(
             host=this_tunnel_def.host,
             user=this_tunnel_def.sshuser,
@@ -185,6 +187,6 @@ class Tunnels:
         print("Stopping tunnels...")
         for this_tunnel in list(reversed(self.tunnels)):
             print(
-                f"Closing tunnel {this_tunnel.tunnel_config.id} at {this_tunnel.tunnel_config.nexthop.localbindport}..."
+                f"Closing tunnel {this_tunnel.tunnel.local_bind_hosts[0]}:{this_tunnel.tunnel.local_bind_ports[0]}..."
             )
             this_tunnel.destroy_tunnel()

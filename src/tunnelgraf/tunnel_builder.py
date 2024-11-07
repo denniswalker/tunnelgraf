@@ -3,6 +3,7 @@
 from sshtunnel import SSHTunnelForwarder
 
 from tunnelgraf.tunnel_definition import TunnelDefinition
+import paramiko
 
 
 class TunnelBuilder:
@@ -25,6 +26,10 @@ class TunnelBuilder:
                 self.tunnel_config.nexthop.localbindport,
             ),
         }
+        if self.tunnel_config.proxycommand is not None:
+            self.tunnel_kwargs["ssh_proxy"] = paramiko.ProxyCommand(
+                self.tunnel_config.proxycommand
+            )
         if self.tunnel_config.sshkeyfile is not None:
             print("sshkeyfile present, using it instead of password.")
             self.tunnel_kwargs["ssh_pkey"] = self.tunnel_config.sshkeyfile

@@ -1,6 +1,7 @@
 import click
 from tunnelgraf.tunnels import Tunnels
 from tunnelgraf.run_remote import RunCommand
+from tunnelgraf.interactive_session import InteractiveSSHSession
 from importlib.metadata import version
 import sys
 import json
@@ -28,10 +29,17 @@ import pathlib
     required=True,
     help="Path to the connection profile."
 )
+@click.option(
+    "--tunnel-id",
+    "-t",
+    help="The tunnel id to use for the command.",
+    default=None,
+)
 @click.pass_context
-def cli(ctx, config_file: pathlib.Path) -> None:
+def cli(ctx, config_file: pathlib.Path, tunnel_id: str) -> None:
     ctx.ensure_object(dict)
     ctx.obj['config_file'] = config_file
+    ctx.obj['tunnel_id'] = tunnel_id
 
 
 # Connect to all remote tunnels defined in a connection profile.
@@ -45,19 +53,14 @@ def connect() -> None:
 
 @cli.command(help="Print the resulting tunnels configuration w/o connecting.")
 @click.option(
-    "--tunnel-id",
-    "-t",
-    help="Print the resulting configuration of the specified tunnel id.",
-    default=None,
-)
-@click.option(
     "--show-credentials",
     help="Print the credentials used when connecting. Default: false",
     is_flag=True,
     default=False,
 )
-def show(tunnel_id: str, show_credentials: bool) -> None:
+def show(show_credentials: bool) -> None:
     config_file = click.get_current_context().obj['config_file']
+    tunnel_id = click.get_current_context().obj['tunnel_id']
     tunnels = Tunnels(
         config_file, connect_tunnels=False, show_credentials=show_credentials
     ).tunnel_configs
@@ -102,20 +105,14 @@ def urls() -> None:
 @cli.command(
     help="Run a specified shell command on the remote host defined in the connection profile."
 )
-@click.option(
-    "--tunnel-id",
-    "-t",
-    help="The tunnel id to run the command on (required).",
-    required=True,
-    default=None,
-)
 @click.argument(
     "command",
     type=str,
     required=True,
 )
-def command(tunnel_id: str, command: str) -> None:
+def command(command: str) -> None:
     config_file = click.get_current_context().obj['config_file']
+    tunnel_id = click.get_current_context().obj['tunnel_id']
     tunnels = Tunnels(config_file, connect_tunnels=False, show_credentials=True).tunnel_configs
     try:
         this_tunnel = [tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
@@ -133,3 +130,24 @@ def command(tunnel_id: str, command: str) -> None:
         user=this_tunnel.get("sshuser"),
     ).run(command)
     print(f"{result}")
+
+
+@cli.command(
+    help="Open an interactive SSH shell to the remote host defined in the connection profile."
+)
+def shell() -> None:
+    config_file = click.get_current_context().obj['config_file']
+    tunnel_id = click.get_current_context().obj['tunnel_id']
+    tunnels = Tunnels(config_file, connect_tunnels=False, show_credentials=True).tunnel_configs
+    try:
+        this_tunnel = [tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
+    except IndexError:
+        print(f"Tunnel id {tunnel_id} not found.")
+        sys.exit(1)
+    InteractiveSSHSession(
+        host=this_tunnel.get("host"),
+        port=this_tunnel.get("port"),
+        identityfile=this_tunnel.get("sshkeyfile"),
+        password=this_tunnel.get("sshpass"),
+        user=this_tunnel.get("sshuser"),
+    ).start_interactive_session()

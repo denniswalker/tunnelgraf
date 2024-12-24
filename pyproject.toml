@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tunnelgraf"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
   "click>=8.0.6",
   "sshtunnel~=0.4.0",
   "pyyaml~=6.0.0",
   "python-hosts~=1.0.5",
-  "pydantic~=2.5.0",
+  "pydantic~=2.10.0",
   "paramiko~=3.4.0",
   "deepmerge~=1.0"
 ]

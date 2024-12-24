@@ -6,6 +6,9 @@ import select
 import termios
 import tty
 from typing import Optional
+import signal
+import fcntl
+import struct
 
 class InteractiveSSHSession(BaseModel):
     host: str
@@ -46,6 +49,8 @@ class InteractiveSSHSession(BaseModel):
         try:
             chan = self._open_shell()
             old_tty = self._set_terminal_raw_mode()
+            self._resize_pty(chan)  # Initial resize
+            signal.signal(signal.SIGWINCH, lambda signum, frame: self._resize_pty(chan))  # Handle terminal resize
             try:
                 self._interactive_loop(chan)
             finally:
@@ -70,6 +75,13 @@ class InteractiveSSHSession(BaseModel):
     def _restore_terminal_settings(self, old_tty):
         # Restore the original terminal settings
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
+
+    def _resize_pty(self, chan):
+        # Correct the buffer size for the ioctl call
+        s = struct.pack('HHHH', 0, 0, 0, 0)
+        size = fcntl.ioctl(sys.stdin, termios.TIOCGWINSZ, s)
+        rows, cols, _, _ = struct.unpack('HHHH', size)
+        chan.resize_pty(width=cols, height=rows)
 
     def _interactive_loop(self, chan):
         chan.settimeout(0.0)

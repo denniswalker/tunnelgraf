@@ -167,7 +167,7 @@ The resulting configuration can be printed to json by running the "show"
 subcommand. This is useful for dynamically looking up connection details from
 scripts or orchestration tools.
 
-`tunnelgraf -p <config_file> show -t <tunnel id>`
+`tunnelgraf -p <config_file> -t <tunnel id> show`
 
 ```json
 [
@@ -228,6 +228,12 @@ nexthops:
 Tunnelgraf supports running commands on the remote host defined in the
 connection profile.
 
-`tunnelgraf -p <config_file> command -t <tunnel id> <command>`
+`tunnelgraf -p <config_file> -t <tunnel id> command <command>`
 
 This will run the command on the remote host and print the output.
+
+## Shell into a tunnel
+
+`tunnelgraf -p <config_file> -t <tunnel id> shell`
+
+This will open an interactive shell into the tunnel.

@@ -1,5 +1,6 @@
 import json
 import subprocess
+import re
 
 
 class LastpassSecret:
@@ -12,7 +13,7 @@ class LastpassSecret:
         self.name = self.secret_response["name"]
         self.secret_user = self.secret_response["username"]
         self.secret_pass = self.secret_response["password"]
-        self.secret_url = self.secret_response["url"].strip("http://")
+        self.secret_url = re.sub(r"^http://", "", self.secret_response["url"])
 
     def _get_secret(self):
         """Returns the secret from Lastpass."""

@@ -42,7 +42,7 @@ localhost.
    Also, make a backup copy of your hosts file, as this is early software.
 1. Optional: If you want to use Lastpass for secrets management, install
    lastpass-cli. e.g. `brew install lastpass-cli`
-1. Run `tunnelgraf connect ./[your config].yml`
+1. Run `tunnelgraf -p [your config].yml connect`
 
 Tunnelgraf will occupy the session until ctrl-c is pressed.
 
@@ -167,7 +167,7 @@ The resulting configuration can be printed to json by running the "show"
 subcommand. This is useful for dynamically looking up connection details from
 scripts or orchestration tools.
 
-`tunnelgraf show <config_file> -t <tunnel id>`
+`tunnelgraf -p <config_file> show -t <tunnel id>`
 
 ```json
 [
@@ -187,7 +187,7 @@ printed.
 
 ## Print URLs
 
-To get json dump of the resulting URLs, run `tunnelgraf urls <config_file>`.
+To get json dump of the resulting URLs, run `tunnelgraf -p <config_file> urls`.
 This will show a default prefix of "ssh://" unless a "protocol" value is
 specified in the data. It will show the dns provided in hosts_file_entry or
 hosts_file_entries if provided, otherwise, the IP address is shown.
@@ -222,3 +222,12 @@ nexthops:
     localbindport: 8443
     hosts_file_entry: <some fqdn>
 ```
+
+## Running Commands on the Remote Host
+
+Tunnelgraf supports running commands on the remote host defined in the
+connection profile.
+
+`tunnelgraf -p <config_file> command -t <tunnel id> <command>`
+
+This will run the command on the remote host and print the output.

@@ -23,6 +23,7 @@ class TunnelDefinition(BaseModel):
     sshkeyfile: Optional[str] = Field(None, alias="sshkeyfile")  # Not required
     hostlookup: Optional[str] = Field(None, alias="hostlookup")  # Not required
     nameserver: Optional[str] = Field(None, alias="nameserver")  # Not required
+    proxycommand: Optional[str] = Field(None, alias="proxycommand")  # Not required
     lastpass: Optional[str] = Field(
         None, alias="lastpass"
     )  # Required or None allowed with alias

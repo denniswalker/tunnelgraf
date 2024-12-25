@@ -9,6 +9,8 @@ from typing import Optional
 import signal
 import fcntl
 import struct
+from unicodedata import normalize
+from wcwidth import wcswidth
 
 class InteractiveSSHSession(BaseModel):
     host: str
@@ -61,9 +63,9 @@ class InteractiveSSHSession(BaseModel):
             self._client.close()
 
     def _open_shell(self):
-        # Open a session and request a pseudo-terminal
-        chan = self._client.invoke_shell()
-        print("Interactive shell session opened.")
+        # Open a session and request a pseudo-terminal with xterm-256color
+        chan = self._client.invoke_shell(term='xterm-256color')
+        print("Interactive shell session opened with xterm-256color.")
         return chan
 
     def _set_terminal_raw_mode(self):
@@ -90,21 +92,30 @@ class InteractiveSSHSession(BaseModel):
                 # Wait for input from the user or server
                 readable, _, _ = select.select([sys.stdin, chan], [], [])
                 if sys.stdin in readable:
-                    # Send user input to the server
-                    data = os.read(sys.stdin.fileno(), 1024)
+                    # Read user input in larger chunks
+                    data = os.read(sys.stdin.fileno(), 4096)
                     if data:
-                        # Check for an exit command
-                        if data.strip() == b'exit':
-                            print("\nExiting session.")
-                            break
-                        chan.send(data)
+                        # Normalize input to NFC form
+                        data = normalize('NFC', data.decode(errors='replace')).encode()
+                        # Split the input by lines and send each line separately
+                        lines = data.splitlines(keepends=True)
+                        for line in lines:
+                            # Check for an exit command
+                            if line.strip() == b'exit':
+                                print("\nExiting session.")
+                                return
+                            chan.send(line)
                 if chan in readable:
                     # Read data from the server and print it
-                    data = chan.recv(1024)
+                    data = chan.recv(4096)
                     if not data:
                         print("\nConnection closed.")
                         break
-                    sys.stdout.write(data.decode())
+                    # Normalize output to NFC form
+                    output = normalize('NFC', data.decode(errors='replace'))
+                    # Calculate width for display purposes
+                    width = wcswidth(output)
+                    sys.stdout.write(output)
                     sys.stdout.flush()
         except KeyboardInterrupt:
             print("\nSession interrupted by user.")

@@ -28,7 +28,11 @@ clean: ## Clean the project
 	find . -name __pycache__ -delete
 
 dev: ## Run the app
-	hatch run python3 src/tunnelgraf/ connect ./test.yml
+	# docker-compose up -d --build --force-recreate
+	export LOG_LEVEL=DEBUG
+	hatch run python3 . -p tests/connections_profiles/sockets.yaml connect
+	# docker-compose down
+	unset LOG_LEVEL
 
 build: ## Build the package
 	hatch build

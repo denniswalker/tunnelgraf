@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  bastion:
+    container_name: bastion
+    hostname: bastion
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "2222:22"
+    networks:
+      - ssh-network
+
+  sshd1:
+    container_name: sshd1
+    hostname: sshd1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - ssh-network
+
+  sshd2:
+    container_name: sshd2
+    hostname: sshd2
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - ssh-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    hostname: nginx
+    networks:
+      - ssh-network
+
+networks:
+  ssh-network:
+    driver: bridge

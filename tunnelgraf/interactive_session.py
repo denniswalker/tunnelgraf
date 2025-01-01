@@ -89,33 +89,42 @@ class InteractiveSSHSession(BaseModel):
         chan.settimeout(0.0)
         try:
             while True:
-                # Wait for input from the user or server
                 readable, _, _ = select.select([sys.stdin, chan], [], [])
                 if sys.stdin in readable:
-                    # Read user input in larger chunks
-                    data = os.read(sys.stdin.fileno(), 4096)
-                    if data:
-                        # Normalize input to NFC form
-                        data = normalize('NFC', data.decode(errors='replace')).encode()
-                        # Split the input by lines and send each line separately
-                        lines = data.splitlines(keepends=True)
-                        for line in lines:
-                            # Check for an exit command
-                            if line.strip() == b'exit':
-                                print("\nExiting session.")
-                                return
-                            chan.send(line)
+                    if not self._handle_user_input(chan):
+                        break  # Exit loop if user input indicates to exit
                 if chan in readable:
-                    # Read data from the server and print it
-                    data = chan.recv(4096)
-                    if not data:
-                        print("\nConnection closed.")
-                        break
-                    # Normalize output to NFC form
-                    output = normalize('NFC', data.decode(errors='replace'))
-                    # Calculate width for display purposes
-                    width = wcswidth(output)
-                    sys.stdout.write(output)
-                    sys.stdout.flush()
+                    if not self._handle_server_output(chan):
+                        break  # Exit loop if server output indicates connection closed
         except KeyboardInterrupt:
             print("\nSession interrupted by user.")
+
+    def _handle_user_input(self, chan):
+        # Read user input in larger chunks
+        data = os.read(sys.stdin.fileno(), 4096)
+        if data:
+            # Normalize input to NFC form
+            data = normalize('NFC', data.decode(errors='replace')).encode()
+            # Split the input by lines and send each line separately
+            lines = data.splitlines(keepends=True)
+            for line in lines:
+                # Check for an exit command
+                if line.strip() == b'exit':
+                    print("\nExiting session.")
+                    return False  # Indicate to exit the loop
+                chan.send(line)
+        return True  # Continue the loop
+
+    def _handle_server_output(self, chan):
+        # Read data from the server and print it
+        data = chan.recv(4096)
+        if not data:
+            print("\nConnection closed.")
+            return False  # Indicate to exit the loop
+        # Normalize output to NFC form
+        output = normalize('NFC', data.decode(errors='replace'))
+        # Calculate width for display purposes
+        width = wcswidth(output)
+        sys.stdout.write(output)
+        sys.stdout.flush()
+        return True  # Continue the loop

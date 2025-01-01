@@ -1,7 +1,44 @@
 import pytest
 from pydantic import ValidationError
+import subprocess
 
 from tunnelgraf.tunnel_definition import TunnelDefinition
+
+
+@pytest.fixture(scope="session", autouse=True)
+def docker_compose():
+    """Pytest fixture to manage Docker Compose lifecycle."""
+    # Setup: Start Docker Compose services
+    try:
+        subprocess.run(
+            ["docker-compose", "up", "--force-recreate", "--build", "-d"],
+            check=True
+        )
+        print("Docker Compose services started successfully.")
+        
+        # Run additional command in an interactive session
+        subprocess.run(
+            ["hatch", "run", "python3", ".", "-p", "tests/four_in_a_row.yaml", "connect"],
+            check=True
+        )
+        print("Additional setup command executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred during setup: {e}")
+        pytest.exit("Exiting due to setup failure.")
+    import ipdb; ipdb.set_trace()
+
+    # Yield control to the test
+    yield
+
+    # Teardown: Stop Docker Compose services
+    try:
+        subprocess.run(
+            ["docker-compose", "down"],
+            check=True
+        )
+        print("Docker Compose services stopped successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while stopping Docker Compose services: {e}")
 
 
 def test_tunnel_definition_required_fields():

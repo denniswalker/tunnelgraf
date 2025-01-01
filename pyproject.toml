@@ -62,6 +62,7 @@ dependencies = [
   "pytest",
   "pytest-cov",
   "pytest-mock",
+  "ipdb",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -93,16 +94,13 @@ fmt = [
 
 [tool.pyright]
 include = ["src"]
-exclude = ["**/node_modules",
-    "**/__pycache__",
-]
+exclude = ["**/node_modules", "**/__pycache__"]
 defineConstant = { DEBUG = true }
-
 reportMissingImports = true
-reportMissingTypeStubs = true
-
+reportMissingTypeStubs = false
 executionEnvironments = [
   { root = "src/tunnelgraf" },
   { root = "src/tests" },
   { root = "src" }
 ]
+stubPath = "stubs"

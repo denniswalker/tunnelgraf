@@ -1,0 +1,24 @@
+---
+id: bastion
+host: localhost
+port: 2222
+sshuser: root
+sshpass: tunnelgraf
+localbindport: 2223
+nexthop:
+  id: sshd1
+  host: sshd1
+  port: 22
+  sshuser: root
+  sshpass: tunnelgraf
+  localbindport: 2224
+  # nexthop:
+  #   id: sshd2
+  #   port: 22
+  #   sshuser: root
+  #   sshpass: tunnelgraf
+  #   nexthop:
+  #     id: nginx
+  #     port: 80
+  #     localbindport: 2080
+  #     hosts_file_entry: nginx.local

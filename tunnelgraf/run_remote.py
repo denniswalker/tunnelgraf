@@ -26,13 +26,25 @@ class RunCommand(pydantic.BaseModel):
                 pkey=self._pkey,
                 port=self.port,
             )
+            print(f"Connected to {self.host}:{self.port} as {self.user}")
         except paramiko.AuthenticationException:
-            raise ValueError("Authentication failed")
-        except paramiko.SSHException:
-            raise ValueError("No valid connection")
+            print("Authentication failed")
+            exit(1)
+        except paramiko.SSHException as e:
+            print(f"No valid connection. Did the parent tunnel start? {e}")
+            exit(1)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            exit(1)
 
     def run(self, command):
-        stdin, stdout, stderr = self.client.exec_command(command, get_pty=True)
+        if self._client is None:
+            raise ValueError("SSH client is not connected")
+        try:
+            stdin, stdout, stderr = self.client.exec_command(command, get_pty=True, timeout=10)
+        except paramiko.ssh_exception.NoValidConnectionsError as e:
+            raise ValueError(f"Unable to connect to {self.host}:{self.port} - {e}")
+
         this_stderr: str = stderr.read().decode("utf-8").strip()
         if this_stderr != "":
             raise ValueError(f"Error from {command}: {this_stderr}")

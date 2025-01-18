@@ -108,12 +108,12 @@ class Tunnels:
             print(
                 f"Tunnel ID: {this_tunnel_def.nexthop.id} - Created {tc.local_bind_host}:{tc.local_bind_port} to {tc._remote_binds[0][0]}:{tc._remote_binds[0][1]}"
             )
-        self.hosts_manager.add_to_hosts(
-            this_tunnel_def.nexthop.id,
-            this_tunnel_def.nexthop.hosts_file_entries,
-            this_tunnel_def.nexthop.hosts_file_entry,
-            this_tunnel_def.nexthop.hostlookup,
-        )
+            self.hosts_manager.add_to_hosts(
+                this_tunnel_def.nexthop.id,
+                this_tunnel_def.nexthop.hosts_file_entries,
+                this_tunnel_def.nexthop.hosts_file_entry,
+                this_tunnel_def.nexthop.hostlookup,
+            )
         nexthop_config = self._update_bastion_address(this_tunnel_def.nexthop)
         self.make_tunnel(nexthop_config)
 

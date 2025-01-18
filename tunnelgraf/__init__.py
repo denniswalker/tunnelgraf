@@ -70,9 +70,9 @@ def show(show_credentials: bool) -> None:
         except IndexError:
             print(f"Tunnel id {tunnel_id} not found.")
             sys.exit(1)
-        print(json.dumps(this_tunnel))
+        print(json.dumps(this_tunnel, indent=4))
     else:
-        print(json.dumps(tunnels))
+        print(json.dumps(tunnels, indent=4))
 
 
 @cli.command(
@@ -99,7 +99,7 @@ def urls() -> None:
             links[tunnel["id"]].append(
                 f"{tunnel['protocol']}://{host}:{tunnel['port']}"
             )
-    print(json.dumps(links))
+    print(json.dumps(links, indent=4))
 
 
 @cli.command(

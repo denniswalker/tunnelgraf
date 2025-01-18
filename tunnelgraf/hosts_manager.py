@@ -2,9 +2,18 @@ from python_hosts import Hosts, HostsEntry, HostsException
 import sys
 
 class HostsManager:
+    _instance = None  # Class-level attribute to store the singleton instance
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(HostsManager, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        self.original_hosts = Hosts()
-        self.new_hosts = Hosts()
+        if not hasattr(self, '_initialized'):  # Ensure __init__ is only called once
+            self.original_hosts = Hosts()
+            self.new_hosts = Hosts()
+            self._initialized = True
 
     def write_changes_to_hosts_file(self):
         """Writes the changes to the hosts file."""

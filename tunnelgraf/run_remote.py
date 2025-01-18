@@ -2,6 +2,7 @@ import paramiko
 from paramiko import RSAKey, DSSKey, ECDSAKey, Ed25519Key
 import pydantic
 from typing import Optional
+import time
 
 
 class RunCommand(pydantic.BaseModel):
@@ -26,24 +27,31 @@ class RunCommand(pydantic.BaseModel):
                 pkey=self._pkey,
                 port=self.port,
             )
-            print(f"Connected to {self.host}:{self.port} as {self.user}")
         except paramiko.AuthenticationException:
-            print("Authentication failed")
+            print("\033[91mAuthentication failed\033[0m")
             exit(1)
         except paramiko.SSHException as e:
-            print(f"No valid connection. Did the parent tunnel start? {e}")
+            print(f"\033[91mNo valid connection. Did the parent tunnel start? {e}\033[0m")
             exit(1)
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            print(f"\033[91mUnexpected error: {e}\033[0m")
             exit(1)
 
     def run(self, command):
         if self._client is None:
             raise ValueError("SSH client is not connected")
-        try:
-            stdin, stdout, stderr = self.client.exec_command(command, get_pty=True, timeout=10)
-        except paramiko.ssh_exception.NoValidConnectionsError as e:
-            raise ValueError(f"Unable to connect to {self.host}:{self.port} - {e}")
+        attempts = 3
+        for attempt in range(attempts):
+            try:
+                stdin, stdout, stderr = self.client.exec_command(command, get_pty=True, timeout=10)
+                break  # Exit the loop if successful
+            except paramiko.ssh_exception.NoValidConnectionsError as e:
+                if attempt == attempts - 1:
+                    # Raise an exception after the last attempt
+                    raise ValueError(f"Unable to connect to {self.host}:{self.port} after {attempts} attempts - {e}")
+                else:
+                    print(f"Attempt {attempt + 1} failed, retrying in 1 second...")
+                    time.sleep(1)  # Wait for 1 second before retrying
 
         this_stderr: str = stderr.read().decode("utf-8").strip()
         if this_stderr != "":

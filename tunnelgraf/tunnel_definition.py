@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from paramiko import SSHConfig, SSHConfigDict
 from pathlib import Path
 from os import path
@@ -16,7 +16,7 @@ class TunnelDefinition(BaseModel):
     host: Optional[str] = Field(None, alias="host")  # Not Required
     port: Optional[int] = Field(22, alias="port")  # Not Required
     localbindaddress: Optional[str] = Field("127.0.0.1", alias="localbindaddress")
-    localbindport: int = Field(..., alias="localbindport")  # Required field
+    localbindport: Optional[int] = Field(22, alias="localbindport")
     protocol: Optional[str] = Field("ssh", alias="protocol")  # Not required
     sshuser: Optional[str] = Field(None, alias="sshuser")  # Not required
     sshpass: Optional[str] = Field(None, alias="sshpass")  # Not required
@@ -24,6 +24,7 @@ class TunnelDefinition(BaseModel):
     hostlookup: Optional[str] = Field(None, alias="hostlookup")  # Not required
     nameserver: Optional[str] = Field(None, alias="nameserver")  # Not required
     proxycommand: Optional[str] = Field(None, alias="proxycommand")  # Not required
+    location: Optional[str] = Field("local", alias="location")  # Not required
     lastpass: Optional[str] = Field(
         None, alias="lastpass"
     )  # Required or None allowed with alias
@@ -48,6 +49,10 @@ class TunnelDefinition(BaseModel):
             always_merger.merge(self._included_vars, data)
             super().__init__(**self._included_vars)
 
+        # Convert paths to absolute if they start with "./"
+        self.convert_local_socket_path_to_absolute('localbindaddress')
+        self.convert_local_socket_path_to_absolute('host')
+
         # Load defaults from the ssh config file
         self._ssh_config = SSHConfig()
         ssh_config_file = path.join(Path.home(), ".ssh", "config")
@@ -56,6 +61,12 @@ class TunnelDefinition(BaseModel):
 
         # Load defaults from lastpass if lastpass is provided
         self.get_lastpass_secret_config()
+
+        # Set the port to None if the address is a socket
+        if self.is_localbindaddress_a_socket():
+            self.localbindport = None
+        if self.is_host_a_socket():
+            self.port = None
 
         # Validate the model
         self.validate()
@@ -100,15 +111,34 @@ class TunnelDefinition(BaseModel):
                 self.sshuser = self._secret_data.secret_user
             if self.sshpass is None:
                 self.sshpass = self._secret_data.secret_pass
+    
+    def is_localbindaddress_a_socket(self) -> bool:
+        """Checks if the localbindaddress is a socket."""
+        return '/' in self.localbindaddress
+    
+    def is_host_a_socket(self) -> bool:
+        """Checks if the host is a socket."""
+        return '/' in self.host
 
     def validate(self):
         """Validates the model."""
         self._check_field_not_empty("id")
-        self._check_field_not_empty("localbindport")
         self._check_field_not_empty("host")
-        self._check_field_not_empty("port")
 
     def _check_field_not_empty(self, attrib: str):
         """Checks if the field is not empty."""
         if getattr(self, attrib) is None:
             raise ValueError(f"Field {attrib} cannot be empty.")
+
+    @field_validator('location')
+    @classmethod
+    def validate_location(cls, value):
+        if value not in {"local", "remote"}:
+            raise ValueError("Location must be either 'local' or 'remote'.")
+        return value
+
+    def convert_local_socket_path_to_absolute(self, field_name: str):
+        """Converts a field to an absolute path if it starts with './'."""
+        field_value = getattr(self, field_name, None)
+        if field_value and field_value.startswith("./"):
+            setattr(self, field_name, str(Path(field_value).resolve()))

@@ -8,6 +8,8 @@ from python_hosts import Hosts, HostsEntry, HostsException
 
 from tunnelgraf import config
 from tunnelgraf.tunnel_builder import TunnelBuilder
+from tunnelgraf.remote_tunnel import RemoteTunnel
+from tunnelgraf.tunnel_interface import TunnelInterface
 from tunnelgraf.tunnel_definition import TunnelDefinition
 from tunnelgraf.run_remote import RunCommand
 from tunnelgraf.nslookup import NSLookup
@@ -35,12 +37,10 @@ class Tunnels:
         self._excluded_fields: list[str] = [
             "nexthop",
             "nexthops",
-            "localbindaddress",
-            "localbindport",
         ]
         if not show_credentials:
             self._excluded_fields += ["sshuser", "sshpass", "sshkeyfile"]
-        self.tunnels: list[TunnelBuilder] = []
+        self.tunnels: list[TunnelInterface] = []
         self.tunnel_configs: list[TunnelDefinition] = []
         self.original_hosts = Hosts()
         self.new_hosts = Hosts()
@@ -133,10 +133,17 @@ class Tunnels:
             if self._connect_tunnels:
                 if this_tunnel_def.nexthop.hostlookup is not None:
                     this_tunnel_def.nexthop.host = self._lookup_host(this_tunnel_def)
+                if this_tunnel_def.nexthop.location == "remote":
+                    print("Nexthop is a remotely established tunnel. Creating it first.")
+                    import ipdb; ipdb.set_trace()
+                    self.tunnels.append(RemoteTunnel(this_tunnel_def.nexthop, this_tunnel_def))
+                    this_tunnel_def.nexthop = this_tunnel_def.nexthop.nexthop
+                    # TODO: Handle remote tunnels with nexthops
+                    # TODO: Handle nested remote tunnels
                 self.tunnels.append(TunnelBuilder(this_tunnel_def))
                 tc = self.tunnels[-1].tunnel
                 print(
-                    f"Tunnel ID: {this_tunnel_def.nexthop.id} - Created {tc.local_bind_host}:{tc.local_bind_port} to {tc._remote_binds[0][0]}:{tc._remote_binds[0][1]}"
+                    f"Tunnel ID: {this_tunnel_def.nexthop.id} - Created {tc._local_binds[0]} to {tc._remote_binds[0]}"
                 )
             self._add_to_hosts(
                 this_tunnel_def.nexthop.id,

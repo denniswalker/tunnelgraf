@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tunnelgraf"
-version = "0.10.1"
+version = "0.11.0"
 dependencies = [
   "click>=8.0.6",
   "sshtunnel~=0.4.0",

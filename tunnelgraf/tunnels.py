@@ -11,6 +11,7 @@ from tunnelgraf.tunnel_builder import TunnelBuilder
 from tunnelgraf.tunnel_definition import TunnelDefinition
 from tunnelgraf.run_remote import RunCommand
 from tunnelgraf.nslookup import NSLookup
+from tunnelgraf.hosts_manager import HostsManager
 
 
 class Tunnels:
@@ -42,12 +43,11 @@ class Tunnels:
             self._excluded_fields += ["sshuser", "sshpass", "sshkeyfile"]
         self.tunnels: list[TunnelBuilder] = []
         self.tunnel_configs: list[TunnelDefinition] = []
-        self.original_hosts = Hosts()
-        self.new_hosts = Hosts()
+        self.hosts_manager = HostsManager()
         self._connect_tunnels: bool = connect_tunnels
         self.make_tunnels()
         if self._connect_tunnels:
-            self._write_changes_to_hosts_file()
+            self.hosts_manager.write_changes_to_hosts_file()
             try:
                 print("Tunnels started. Press Ctrl-C to stop.")
                 # INFO: on mac, check open ports 'netstat -anvp tcp | awk 'NR<3 || /LISTEN/'
@@ -82,41 +82,6 @@ class Tunnels:
         nhcfg.port = nexthop_config.localbindport
         return nhcfg
 
-    def _write_changes_to_hosts_file(self):
-        """Writes the changes to the hosts file."""
-        print("Updating hosts file...")
-        try:
-            self.new_hosts.write()
-        except HostsException as e:
-            print(
-                f"Error writing hosts file. Are you root or do you own the hosts file? Error: {e}"
-            )
-            sys.exit(1)
-
-    def _add_to_hosts(
-        self,
-        what_for: str,
-        hosts: list,
-        this_host: str | None = None,
-        this_host_lookup: str | None = None,
-    ) -> None:
-        """Adds a host to the hosts list."""
-        if this_host is not None:
-            hosts.append(this_host)
-        if this_host_lookup is not None:
-            hosts.append(this_host_lookup)
-        if len(hosts) > 0:
-            for host in hosts:
-                if self._connect_tunnels:
-                    print(f"{host} will be added to hosts file.")
-                this_entry = HostsEntry(
-                    address="127.0.0.1",
-                    names=[host],
-                    entry_type="ipv4",
-                    comment=f"pytunnels entry for {what_for}",
-                )
-                self.new_hosts.add(entries=[this_entry], allow_address_duplication=True)
-
     def make_tunnels(self):
         """Creates tunnels from the config file."""
         if isinstance(self.tunnel_defs, list):
@@ -138,7 +103,7 @@ class Tunnels:
                 print(
                     f"Tunnel ID: {this_tunnel_def.nexthop.id} - Created {tc.local_bind_host}:{tc.local_bind_port} to {tc._remote_binds[0][0]}:{tc._remote_binds[0][1]}"
                 )
-            self._add_to_hosts(
+            self.hosts_manager.add_to_hosts(
                 this_tunnel_def.nexthop.id,
                 this_tunnel_def.nexthop.hosts_file_entries,
                 this_tunnel_def.nexthop.hosts_file_entry,
@@ -182,8 +147,7 @@ class Tunnels:
 
     def stop_tunnels(self):
         """Stops all tunnels."""
-        print("Restoring original hosts file.")
-        self.original_hosts.write()
+        self.hosts_manager.restore_original_hosts_file()
         print("Stopping tunnels...")
         for this_tunnel in list(reversed(self.tunnels)):
             print(

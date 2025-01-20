@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tunnelgraf"
-version = "0.11.0"
+version = "1.0.0"
 dependencies = [
   "click>=8.0.6",
   "sshtunnel~=0.4.0",
@@ -14,6 +14,7 @@ dependencies = [
   "paramiko~=3.4.0",
   "deepmerge~=1.0",
   "wcwidth~=0.2.13",
+  "psutil~=6.0.0",
 ]
 authors = [
   {name = "Dennis Walker", email = "denniswalker@me.com"},
@@ -66,11 +67,10 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["tunnelgraf"]
+packages = ["src/tunnelgraf"]
 
 [tool.hatch.envs.test.scripts]
-run-coverage = "pytest --cov-config=pyproject.toml --cov=pkg --cov=tests"
-run = "run-coverage --no-cov"
+run = "pytest {args}"
 
 [tool.hatch.envs.style]
 detached = true
@@ -104,3 +104,21 @@ executionEnvironments = [
   { root = "src" }
 ]
 stubPath = "stubs"
+
+# Add this section to handle the src layout
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+python_files = ["test_*.py"]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    # ... other test dependencies ...
+]

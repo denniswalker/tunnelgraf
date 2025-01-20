@@ -8,8 +8,8 @@ init: ## Create a venv and install dependencies
 	pip3 install hatch
 	hatch env create
 
-test: ## Run tests
-	hatch run test:run
+test:
+	hatch run test:run -vv --pdb
 
 ci: ## Run tests and generate junit report
 	hatch run test:run --junitxml=report.xml
@@ -37,5 +37,9 @@ dev: ## Run the app
 build: ## Build the package
 	hatch build
 
+install: ## Install the package
+	pip3 install dist/tunnelgraf-*.whl --break-system-packages --force-reinstall
+
 publish: ## Publish the package
 	hatch publish
+

@@ -3,6 +3,9 @@ import threading
 from time import sleep
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import signal
+import sys
+import time
 
 import yaml
 from python_hosts import Hosts, HostsEntry, HostsException
@@ -26,7 +29,9 @@ class Tunnels:
         config_file_path: Path,
         connect_tunnels: bool = True,
         show_credentials: bool = False,
+        detach: bool = False,
     ):
+        self.detach = detach
         with config_file_path.open() as cf:
             self._config_file: str = cf.read()
         self.config: dict | list = self._get_config()
@@ -78,8 +83,10 @@ class Tunnels:
             status_message += f"\033[91m, Down tunnels: {', '.join(down_tunnels)}\033[0m"
         else:
             status_message += "\033[92m, All tunnels are active.\033[0m"
-
-        print(f"\r{status_message}", end="")
+        if not self.detach:
+            print(f"\r{status_message}", end="")
+        else:
+            print(f"{status_message}")
 
     @property
     def config_file(self):

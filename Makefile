@@ -8,7 +8,7 @@ init: ## Create a venv and install dependencies
 	pip3 install hatch
 	hatch env create
 
-test: ## Run tests
+test:
 	hatch run test:run
 
 ci: ## Run tests and generate junit report

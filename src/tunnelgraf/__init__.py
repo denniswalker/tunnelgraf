@@ -6,6 +6,10 @@ from importlib.metadata import version
 import sys
 import json
 import pathlib
+import os
+import syslog
+import signal
+import psutil
 
 
 # Default arguments for all commands.
@@ -46,9 +50,41 @@ def cli(ctx, config_file: pathlib.Path, tunnel_id: str) -> None:
 @cli.command(
     help="Connect to the remote tunnels defined in a connection profile. Requires an argument containing the path to the connection profile, e.g `tunnelgraf connect <tunnelfile.yml>"
 )
-def connect() -> None:
-    config_file = click.get_current_context().obj['config_file']
-    Tunnels(config_file)
+@click.option(
+    "--detach", "-d",
+    help="Run in background and return process ID",
+    is_flag=True,
+    default=False,
+)
+def connect(detach: bool) -> None:
+    if not detach:
+        config_file = click.get_current_context().obj['config_file']
+        Tunnels(config_file, connect_tunnels=True)
+    else:
+        # Fork the current process
+        pid = os.fork()
+        if pid > 0:
+            # Parent process
+            print("Starting tunnels in process with PID:", pid)
+            os._exit(0)  # Exit the parent process
+        elif pid == 0:
+            # Child process
+            # Redirect stdout and stderr to syslog
+            syslog.openlog(ident="tunnelgraf", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
+            class SyslogRedirector:
+                def write(self, message):
+                    if message.strip():
+                        syslog.syslog(syslog.LOG_INFO, message.strip())
+                def flush(self):
+                    pass
+            sys.stdout = SyslogRedirector()
+            sys.stderr = SyslogRedirector()
+
+            config_file = click.get_current_context().obj['config_file']
+            Tunnels(config_file, connect_tunnels=True, detach=True)
+        else:
+            print("Fork failed.")
+            sys.exit(1)
 
 
 @cli.command(help="Print the resulting tunnels configuration w/o connecting.")
@@ -151,3 +187,39 @@ def shell() -> None:
         password=this_tunnel.get("sshpass"),
         user=this_tunnel.get("sshuser"),
     ).start_interactive_session()
+
+
+@cli.command(
+    help="Stop the tunnels associated with the given connection profile."
+)
+@click.pass_context
+def stop(ctx) -> None:
+    config_file = ctx.obj['config_file']
+    profile_path = os.path.abspath(str(config_file))
+    current_pid = os.getpid()
+
+    # Find the process with the profile path in the command line arguments.
+    for proc in psutil.process_iter(['pid', 'cmdline']):
+        try:
+            pid = proc.info['pid']
+            # Skip the current process
+            if pid == current_pid:
+                continue
+
+            cmdline = proc.info['cmdline']
+            if cmdline:
+                # Iterate through each argument in cmdline with index
+                for i, arg in enumerate(cmdline):
+                    # Check if the argument contains a path separator
+                    if ('/' in arg or '\\' in arg) and i + 1 < len(cmdline):
+                        # Convert to absolute path
+                        arg_path = os.path.abspath(arg)
+                        # Compare with the profile_path and check the next entry
+                        if arg_path == profile_path and cmdline[i + 1] == "connect":
+                            os.kill(pid, signal.SIGINT)
+                            print(f"Stopping tunnels for profile {profile_path}...")
+                            return
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+    print("Tunnels are not running.")

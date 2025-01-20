@@ -41,6 +41,8 @@ import psutil
 )
 @click.pass_context
 def cli(ctx, config_file: pathlib.Path, tunnel_id: str) -> None:
+    if ctx.invoked_subcommand == "help":
+        return
     ctx.ensure_object(dict)
     ctx.obj["config_file"] = config_file
     ctx.obj["tunnel_id"] = tunnel_id

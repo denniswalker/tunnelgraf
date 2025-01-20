@@ -67,7 +67,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/tunnelgraf"]
 
 [tool.hatch.envs.test.scripts]
 run = "pytest {args}"

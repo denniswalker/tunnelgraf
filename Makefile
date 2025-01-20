@@ -37,5 +37,9 @@ dev: ## Run the app
 build: ## Build the package
 	hatch build
 
+install: ## Install the package
+	pip3 install dist/tunnelgraf-*.whl --break-system-packages --force-reinstall
+
 publish: ## Publish the package
 	hatch publish
+

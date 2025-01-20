@@ -33,8 +33,7 @@ def wait_for_tunnel(port, max_attempts=30):
                 print(f"Tunnel on port {port} is ready")
                 return
             print(
-                f"Waiting for tunnel on port {
-                    port}... (attempt {attempts+1}/{max_attempts})"
+                f"Waiting for tunnel on port {port}... (attempt {attempts+1}/{max_attempts})"
             )
         except socket.error as e:
             print(f"Socket error: {e}")
@@ -48,7 +47,7 @@ def wait_for_tunnel(port, max_attempts=30):
 
 
 @pytest.fixture(scope="module")
-def docker_compose(profile_path):
+def standup_containers(profile_path):
     """Fixture to manage Docker Compose lifecycle."""
     tunnel_process = None
     try:
@@ -92,8 +91,7 @@ def wait_for_docker_services():
                     print(f"Service {service} is ready on port {port}")
                     break
                 print(
-                    f"Waiting for {service} on port {
-                        port}... (attempt {attempts+1}/{max_attempts})"
+                    f"Waiting for {service} on port {port}... (attempt {attempts+1}/{max_attempts})"
                 )
             except socket.error as e:
                 print(f"Socket error for {service}: {e}")
@@ -112,7 +110,7 @@ def runner():
     return CliRunner()
 
 
-def test_all_ports_accessible():
+def test_all_ports_accessible(standup_containers):
     """Verify all tunnel ports are accessible after tunnelgraf connect."""
     ports_to_check = [2222, 2224, 2225, 2080]
     for port in ports_to_check:
@@ -123,7 +121,7 @@ def test_all_ports_accessible():
         assert result == 0, f"Port {port} is not accessible"
 
 
-def test_command_execution(profile_path):
+def test_command_execution(standup_containers, profile_path):
     """Test the command subcommand executes successfully on different hosts."""
     test_cases = [
         {"tunnel_id": "bastion", "command": "hostname", "expected_output": "bastion"},
@@ -147,15 +145,13 @@ def test_command_execution(profile_path):
 
         assert (
             result.returncode == 0
-        ), f"Command failed with exit code {
-            result.returncode}"
+        ), f"Command failed with exit code {result.returncode}"
         assert (
             test["expected_output"] in result.stdout
-        ), f"Expected output not found in stdout: {
-            result.stdout}"
+        ), f"Expected output not found in stdout: {result.stdout}"
 
 
-def test_shell_connection(profile_path):
+def test_shell_connection(standup_containers, profile_path):
     """Test shell connection to different hosts."""
     test_cases = ["bastion", "sshd1", "sshd2"]
 
@@ -174,8 +170,7 @@ def test_shell_connection(profile_path):
             time.sleep(2)
             assert (
                 process.poll() is None
-            ), f"Shell connection to {
-                tunnel_id} failed to start"
+            ), f"Shell connection to {tunnel_id} failed to start"
 
             # Send "exit" command to the shell
             time.sleep(1)  # Wait for the shell to start.
@@ -190,7 +185,7 @@ def test_shell_connection(profile_path):
             process.wait()
 
 
-def test_nginx_accessible():
+def test_nginx_accessible(standup_containers):
     """Test the nginx is accessible through the tunnel chain."""
     curl_process = subprocess.run(
         ["curl", "-s", "-I", "http://localhost:2080"], capture_output=True, text=True

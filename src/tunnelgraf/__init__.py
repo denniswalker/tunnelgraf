@@ -228,8 +228,7 @@ def stop(ctx) -> None:
                         # Compare with the profile_path and check the next entry
                         if arg_path == profile_path and cmdline[i + 1] == "connect":
                             os.kill(pid, signal.SIGINT)
-                            print(f"Stopping tunnels for profile {
-                                  profile_path}...")
+                            print(f"Stopping tunnels for profile {profile_path}...")
                             return
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue

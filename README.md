@@ -237,3 +237,10 @@ This will run the command on the remote host and print the output.
 `tunnelgraf -p <config_file> -t <tunnel id> shell`
 
 This will open an interactive shell into the tunnel.
+
+
+## Contributing
+
+Integration tests depend on Docker and docker-compose.
+
+Fork repo. Run tests `make test`. Open PR once tests pass.

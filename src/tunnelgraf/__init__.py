@@ -31,7 +31,7 @@ import psutil
         path_type=pathlib.Path,
     ),
     required=True,
-    help="Path to the connection profile."
+    help="Path to the connection profile.",
 )
 @click.option(
     "--tunnel-id",
@@ -42,8 +42,8 @@ import psutil
 @click.pass_context
 def cli(ctx, config_file: pathlib.Path, tunnel_id: str) -> None:
     ctx.ensure_object(dict)
-    ctx.obj['config_file'] = config_file
-    ctx.obj['tunnel_id'] = tunnel_id
+    ctx.obj["config_file"] = config_file
+    ctx.obj["tunnel_id"] = tunnel_id
 
 
 # Connect to all remote tunnels defined in a connection profile.
@@ -51,14 +51,15 @@ def cli(ctx, config_file: pathlib.Path, tunnel_id: str) -> None:
     help="Connect to the remote tunnels defined in a connection profile. Requires an argument containing the path to the connection profile, e.g `tunnelgraf connect <tunnelfile.yml>"
 )
 @click.option(
-    "--detach", "-d",
+    "--detach",
+    "-d",
     help="Run in background and return process ID",
     is_flag=True,
     default=False,
 )
 def connect(detach: bool) -> None:
     if not detach:
-        config_file = click.get_current_context().obj['config_file']
+        config_file = click.get_current_context().obj["config_file"]
         Tunnels(config_file, connect_tunnels=True)
     else:
         # Fork the current process
@@ -70,17 +71,22 @@ def connect(detach: bool) -> None:
         elif pid == 0:
             # Child process
             # Redirect stdout and stderr to syslog
-            syslog.openlog(ident="tunnelgraf", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON)
+            syslog.openlog(
+                ident="tunnelgraf", logoption=syslog.LOG_PID, facility=syslog.LOG_DAEMON
+            )
+
             class SyslogRedirector:
                 def write(self, message):
                     if message.strip():
                         syslog.syslog(syslog.LOG_INFO, message.strip())
+
                 def flush(self):
                     pass
+
             sys.stdout = SyslogRedirector()
             sys.stderr = SyslogRedirector()
 
-            config_file = click.get_current_context().obj['config_file']
+            config_file = click.get_current_context().obj["config_file"]
             Tunnels(config_file, connect_tunnels=True, detach=True)
         else:
             print("Fork failed.")
@@ -95,14 +101,15 @@ def connect(detach: bool) -> None:
     default=False,
 )
 def show(show_credentials: bool) -> None:
-    config_file = click.get_current_context().obj['config_file']
-    tunnel_id = click.get_current_context().obj['tunnel_id']
+    config_file = click.get_current_context().obj["config_file"]
+    tunnel_id = click.get_current_context().obj["tunnel_id"]
     tunnels = Tunnels(
         config_file, connect_tunnels=False, show_credentials=show_credentials
     ).tunnel_configs
     if tunnel_id:
         try:
-            this_tunnel = [tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
+            this_tunnel = [
+                tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
         except IndexError:
             print(f"Tunnel id {tunnel_id} not found.")
             sys.exit(1)
@@ -115,7 +122,7 @@ def show(show_credentials: bool) -> None:
     help="Print the URLs to access each tunnel. Protocol is displayed as ssh unless specified."
 )
 def urls() -> None:
-    config_file = click.get_current_context().obj['config_file']
+    config_file = click.get_current_context().obj["config_file"]
     tunnels = Tunnels(config_file, connect_tunnels=False).tunnel_configs
     links: dict = {}
     for tunnel in tunnels:
@@ -147,17 +154,20 @@ def urls() -> None:
     required=True,
 )
 def command(command: str) -> None:
-    config_file = click.get_current_context().obj['config_file']
-    tunnel_id = click.get_current_context().obj['tunnel_id']
-    tunnels = Tunnels(config_file, connect_tunnels=False, show_credentials=True).tunnel_configs
+    config_file = click.get_current_context().obj["config_file"]
+    tunnel_id = click.get_current_context().obj["tunnel_id"]
+    tunnels = Tunnels(
+        config_file, connect_tunnels=False, show_credentials=True
+    ).tunnel_configs
     try:
-        this_tunnel = [tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
+        this_tunnel = [
+            tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
     except IndexError:
         print(f"Tunnel id {tunnel_id} not found.")
         sys.exit(1)
     host = this_tunnel.get("host")
     port = this_tunnel.get("port")
-    #print(f"Running command \"{command}\" on {host}:{port}...")
+    # print(f"Running command \"{command}\" on {host}:{port}...")
     result = RunCommand(
         host=host,
         port=port,
@@ -172,11 +182,14 @@ def command(command: str) -> None:
     help="Open an interactive SSH shell to the remote host defined in the connection profile."
 )
 def shell() -> None:
-    config_file = click.get_current_context().obj['config_file']
-    tunnel_id = click.get_current_context().obj['tunnel_id']
-    tunnels = Tunnels(config_file, connect_tunnels=False, show_credentials=True).tunnel_configs
+    config_file = click.get_current_context().obj["config_file"]
+    tunnel_id = click.get_current_context().obj["tunnel_id"]
+    tunnels = Tunnels(
+        config_file, connect_tunnels=False, show_credentials=True
+    ).tunnel_configs
     try:
-        this_tunnel = [tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
+        this_tunnel = [
+            tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
     except IndexError:
         print(f"Tunnel id {tunnel_id} not found.")
         sys.exit(1)
@@ -189,35 +202,34 @@ def shell() -> None:
     ).start_interactive_session()
 
 
-@cli.command(
-    help="Stop the tunnels associated with the given connection profile."
-)
+@cli.command(help="Stop the tunnels associated with the given connection profile.")
 @click.pass_context
 def stop(ctx) -> None:
-    config_file = ctx.obj['config_file']
+    config_file = ctx.obj["config_file"]
     profile_path = os.path.abspath(str(config_file))
     current_pid = os.getpid()
 
     # Find the process with the profile path in the command line arguments.
-    for proc in psutil.process_iter(['pid', 'cmdline']):
+    for proc in psutil.process_iter(["pid", "cmdline"]):
         try:
-            pid = proc.info['pid']
+            pid = proc.info["pid"]
             # Skip the current process
             if pid == current_pid:
                 continue
 
-            cmdline = proc.info['cmdline']
+            cmdline = proc.info["cmdline"]
             if cmdline:
                 # Iterate through each argument in cmdline with index
                 for i, arg in enumerate(cmdline):
                     # Check if the argument contains a path separator
-                    if ('/' in arg or '\\' in arg) and i + 1 < len(cmdline):
+                    if ("/" in arg or "\\" in arg) and i + 1 < len(cmdline):
                         # Convert to absolute path
                         arg_path = os.path.abspath(arg)
                         # Compare with the profile_path and check the next entry
                         if arg_path == profile_path and cmdline[i + 1] == "connect":
                             os.kill(pid, signal.SIGINT)
-                            print(f"Stopping tunnels for profile {profile_path}...")
+                            print(f"Stopping tunnels for profile {
+                                  profile_path}...")
                             return
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue

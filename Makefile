@@ -9,7 +9,7 @@ init: ## Create a venv and install dependencies
 	hatch env create
 
 test:
-	hatch run test:run
+	hatch run test:run -vv --pdb
 
 ci: ## Run tests and generate junit report
 	hatch run test:run --junitxml=report.xml

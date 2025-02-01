@@ -2,20 +2,23 @@ import os
 import threading
 from time import sleep
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import signal
-import sys
-import time
-
 import yaml
-from python_hosts import Hosts, HostsEntry, HostsException
-
+import time
+import signal
 from tunnelgraf import config
 from tunnelgraf.tunnel_builder import TunnelBuilder
 from tunnelgraf.tunnel_definition import TunnelDefinition
 from tunnelgraf.run_remote import RunCommand
 from tunnelgraf.nslookup import NSLookup
 from tunnelgraf.hosts_manager import HostsManager
+from tunnelgraf.logger import logger
+from tunnelgraf.constants import (
+    STATUS_ACTIVE,
+    STATUS_DOWN,
+    STATUS_CLOSING,
+    STATUS_FAILED,
+)
+from tunnelgraf.tunnel_count import TunnelCount
 
 
 class Tunnels:
@@ -56,37 +59,99 @@ class Tunnels:
         return fields
 
     def _monitor_tunnels(self):
-        try:
-            for thread in self.threads:
-                thread.join()
-            self.hosts_manager.write_changes_to_hosts_file()
-            print("Tunnels started. Press Ctrl-C to stop.")
-            while True:
-                self._check_tunnel_status()
-                sleep(5)
-        except KeyboardInterrupt:
+        def handle_sigint(signum, frame):
             self.stop_tunnels()
             print("Goodbye!")
             exit(0)
 
-    def _check_tunnel_status(self):
+        # Register the SIGINT handler
+        signal.signal(signal.SIGINT, handle_sigint)
+        try:
+            for thread in self.threads:
+                thread.join()
+            self.hosts_manager.write_changes_to_hosts_file()
+            print("Tunnels started. Press 'q' to quit.")
+            last_check_time = time.time()
+            self._check_tunnel_status(last_check_time)
+            while True:
+                current_time = time.time()
+                if current_time - last_check_time >= 5:
+                    self._check_tunnel_status(current_time)
+                    last_check_time = current_time
+                
+                # Check for 'q' input to quit
+                if self._check_for_quit():
+                    self.stop_tunnels()
+                    print("Goodbye!")
+                    break
+
+        except KeyboardInterrupt:
+            self.stop_tunnels()
+            print("Goodbye!")
+
+    def _check_for_quit(self):
+        """Check if 'q' is pressed to quit."""
+        # TODO: Split this out into a separate file.
+        import sys
+
+        if sys.platform == 'win32':
+            import msvcrt
+            # Check if a key has been pressed
+            if msvcrt.kbhit():
+                # Get the key pressed
+                key = msvcrt.getch().decode('utf-8').lower()
+                if key == 'q':
+                    return True
+        else:
+            import tty
+            import termios
+            import select
+
+            # Ensure sys.stdin is open
+            if sys.stdin.closed:
+                return False
+
+            # Save the terminal settings
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                # Set the terminal to raw mode
+                tty.setraw(sys.stdin.fileno())
+                # Non-blocking input check
+                i, o, e = select.select([sys.stdin], [], [], 0.1)
+                if i:
+                    key = sys.stdin.read(1).lower()
+                    if key == 'q':
+                        return True
+            finally:
+                # Restore the terminal settings
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return False
+
+    def _check_tunnel_status(self, current_time: float):
         """Checks the status of tunnels and prints the number of active tunnels and IDs of down tunnels."""
         active_tunnels = 0
-        down_tunnels = []
+        down_tunnels = TunnelCount().tunnels
+        #print(f"Down tunnels: {down_tunnels}")
         for tunnel in self.tunnels:
             if tunnel.tunnel.tunnel_is_up:
                 active_tunnels += 1
-            else:
-                down_tunnels.append(tunnel.tunnel_config.nexthop.id)
-        status_message = f"Active tunnels: {active_tunnels} of {len(self.tunnels)}"
+                if tunnel.tunnel_config.nexthop.id in down_tunnels:
+                    down_tunnels.remove(tunnel.tunnel_config.nexthop.id)
+        status_message = f"Active tunnels: {active_tunnels} of {TunnelCount().count}"
         if down_tunnels:
-            status_message += f"\033[91m, Down tunnels: {', '.join(down_tunnels)}\033[0m"
+            status_message += f", {STATUS_DOWN}{', '.join(down_tunnels)}"
         else:
-            status_message += "\033[92m, All tunnels are active.\033[0m"
+            status_message += f", {STATUS_ACTIVE}"
+        
+        # Add current time to the status message
+        current_time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time))
+        status_message += f" as of {current_time_str}"
+        
         if not self.detach:
             print(f"\r{status_message}", end="")
         else:
-            print(f"{status_message}")
+            logger.info(f"{status_message}")
 
     @property
     def config_file(self):
@@ -155,13 +220,14 @@ class Tunnels:
 
     def stop_tunnels(self):
         """Stops all tunnels."""
+        logger.info("\nStopping tunnels...")
         self.hosts_manager.restore_original_hosts_file()
-        print("Stopping tunnels...")
+        TunnelCount().reset()  # Reset the counter when stopping tunnels
         for this_tunnel in reversed(self.tunnels):
             try:
                 print(
-                    f"\033[92mTunnel ID: {this_tunnel.tunnel_config.nexthop.id} - Closing tunnel {this_tunnel.tunnel.local_bind_hosts[0]}:{this_tunnel.tunnel.local_bind_ports[0]}...\033[0m"
+                    f"{STATUS_CLOSING} {this_tunnel.tunnel.local_bind_hosts[0]}:{this_tunnel.tunnel.local_bind_ports[0]}..."
                 )
                 this_tunnel.destroy_tunnel()
             except Exception as e:
-                print(f"\033[91mFailed to stop tunnel ID: {this_tunnel.tunnel_config.nexthop.id}. Error: {e}\033[0m")
+                logger.error(f"{STATUS_FAILED} ID: {this_tunnel.tunnel_config.nexthop.id}.")

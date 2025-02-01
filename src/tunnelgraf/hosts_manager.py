@@ -1,5 +1,7 @@
 from python_hosts import Hosts, HostsEntry, HostsException
+from tunnelgraf.logger import logger
 import sys
+from tunnelgraf.constants import COLOR_RED, COLOR_RESET, COLOR_GREEN
 
 class HostsManager:
     _instance = None  # Class-level attribute to store the singleton instance
@@ -17,12 +19,12 @@ class HostsManager:
 
     def write_changes_to_hosts_file(self):
         """Writes the changes to the hosts file."""
-        print("Updating hosts file...")
+        logger.info("Updating hosts file...")
         try:
             self.new_hosts.write()
         except HostsException as e:
-            print(
-                f"Error writing hosts file. Are you root or do you own the hosts file? Error: {e}"
+            logger.error(
+                f"{COLOR_RED}Error writing hosts file. Are you root or do you own the hosts file? Error: {e}{COLOR_RESET}"
             )
             sys.exit(1)
 
@@ -40,7 +42,7 @@ class HostsManager:
             hosts.append(this_host_lookup)
         if len(hosts) > 0:
             for host in hosts:
-                print(f"{host} will be added to hosts file.")
+                logger.info(f"{host} will be added to hosts file.")
                 this_entry = HostsEntry(
                     address="127.0.0.1",
                     names=[host],
@@ -51,5 +53,5 @@ class HostsManager:
 
     def restore_original_hosts_file(self):
         """Restores the original hosts file."""
-        print("Restoring original hosts file.")
+        logger.info("Restoring original hosts file.")
         self.original_hosts.write() 

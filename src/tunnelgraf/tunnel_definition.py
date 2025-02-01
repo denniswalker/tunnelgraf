@@ -8,6 +8,7 @@ from deepmerge import always_merger
 import yaml
 from tunnelgraf.lastpass_secrets import LastpassSecret
 from tunnelgraf import config
+from tunnelgraf.tunnel_count import TunnelCount
 
 
 class TunnelDefinition(BaseModel):
@@ -59,6 +60,9 @@ class TunnelDefinition(BaseModel):
 
         # Validate the model
         self.validate()
+
+        # Add the tunnel to the tunnel count
+        TunnelCount().add_tunnel(self.id)
 
     def fetch_include_values(self) -> None | dict:
         if self.include and config.CONFIG_FILE_PATH is not None:

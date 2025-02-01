@@ -21,7 +21,7 @@ import psutil
     "--profile",
     "-p",
     "config_file",
-    envvar="TUNNELGRAF_CONFIG",
+    envvar="TUNNELGRAF_PROFILE",
     type=click.Path(
         exists=True,
         file_okay=True,

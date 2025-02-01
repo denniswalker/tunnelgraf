@@ -1,6 +1,6 @@
 """ Creates an ssh tunnel to remote device exposing ports 22 and 443."""
 
-from sshtunnel import SSHTunnelForwarder
+from sshtunnel import SSHTunnelForwarder 
 
 from tunnelgraf.tunnel_definition import TunnelDefinition
 import paramiko
@@ -8,6 +8,13 @@ from tunnelgraf.run_remote import RunCommand
 from tunnelgraf.nslookup import NSLookup
 from tunnelgraf.hosts_manager import HostsManager
 import time
+from tunnelgraf.constants import (
+    COLOR_GREEN,
+    COLOR_YELLOW,
+    COLOR_RED,
+    COLOR_RESET
+)
+from tunnelgraf.logger import logger, sshtunnel_logger
 
 class TunnelBuilder:
     """Creates an ssh tunnel proxy through a bastion host to a remote machine's port."""
@@ -26,7 +33,6 @@ class TunnelBuilder:
         if self.tunnel_config.nexthop.hostlookup:
             self.tunnel_config.nexthop.host = self._lookup_host(self.tunnel_config)
         self.tunnel_kwargs: dict = {
-            #"mute_exceptions": True,
             "compression": True,
             "ssh_username": self.tunnel_config.sshuser,
             "remote_bind_address": (
@@ -39,7 +45,7 @@ class TunnelBuilder:
             ),
         }
         if self.tunnel_config.sshkeyfile is not None:
-            print("sshkeyfile present, using it instead of password.")
+            logger.debug("sshkeyfile present, using it instead of password.")
             self.tunnel_kwargs["ssh_pkey"] = self.tunnel_config.sshkeyfile
         else:
             self.tunnel_kwargs["ssh_password"] = self.tunnel_config.sshpass
@@ -56,26 +62,34 @@ class TunnelBuilder:
     def create_tunnel(self) -> SSHTunnelForwarder:
         """Initializes the tunnel."""
         self.tunnel = SSHTunnelForwarder(
-            (self.tunnel_config.host, self.tunnel_config.port), **self.tunnel_kwargs
+            (self.tunnel_config.host, self.tunnel_config.port),
+            logger=sshtunnel_logger,
+            mute_exceptions=True,
+            **self.tunnel_kwargs
         )
         self.start_tunnel()
 
     def start_tunnel(self):
         """Starts tunnel. Uses a non-blocking thread if there are no more nexthops."""
-        # print(f"Tunnel ID: {self.tunnel_config.nexthop.id} - Tunneling through {self.tunnel_config.host}:{self.tunnel_config.port} to {self.tunnel_config.nexthop.host}:{self.tunnel_config.nexthop.port}...")
+        logger.info(f"Tunnel ID: {self.tunnel_config.nexthop.id} - Tunneling through {self.tunnel_config.host}:{self.tunnel_config.port} to {self.tunnel_config.nexthop.host}:{self.tunnel_config.nexthop.port}...")
         retry_attempts = 3
         for attempt in range(retry_attempts):
             try:
                 self.tunnel.start()
-                print(
-                    f"\033[92mTunnel ID: {self.tunnel_config.nexthop.id} - Created {self.tunnel.local_bind_host}:{self.tunnel.local_bind_port} to {self.tunnel._remote_binds[0][0]}:{self.tunnel._remote_binds[0][1]}\033[0m"
+            except Exception:
+                logger.debug(f"Tunnel start error.")
+            if self.tunnel.is_active:
+                logger.info(
+                    f"{COLOR_GREEN}Tunnel ID: {self.tunnel_config.nexthop.id} - Created {self.tunnel.local_bind_host}:{self.tunnel.local_bind_port} to {self.tunnel._remote_binds[0][0]}:{self.tunnel._remote_binds[0][1]}{COLOR_RESET}"
                 )
                 break
-            except Exception as e:
-                # Suppress the stack trace and handle the exception
-                print(f"\033[91mTunnel ID: {self.tunnel_config.nexthop.id}. Failed to start tunnel. Attempt {attempt + 1} of {retry_attempts}. Error: {e}\033[0m")
+            else:
                 if attempt < retry_attempts - 1:
-                    time.sleep(1)
+                    this_color = COLOR_YELLOW
+                else:
+                    this_color = COLOR_RED
+                logger.info(f"{this_color}Tunnel ID: {self.tunnel_config.nexthop.id}. Failed to start tunnel. Attempt {attempt + 1} of {retry_attempts}.{COLOR_RESET}")
+                time.sleep(1)
 
     def destroy_tunnel(self):
         """Destroys tunnel."""
@@ -84,7 +98,7 @@ class TunnelBuilder:
     
     # Private instance methods
     def _lookup_host(self, this_tunnel_def: TunnelDefinition) -> str | None:
-        print(
+        logger.info(
             f"Tunnel ID: {this_tunnel_def.nexthop.id} - Looking up {this_tunnel_def.nexthop.hostlookup}..."
         )
         this_connection = RunCommand(

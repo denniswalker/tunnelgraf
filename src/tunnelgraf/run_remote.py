@@ -3,6 +3,8 @@ from paramiko import RSAKey, DSSKey, ECDSAKey, Ed25519Key
 import pydantic
 from typing import Optional
 import time
+from tunnelgraf.logger import logger
+from tunnelgraf.constants import COLOR_RED, COLOR_RESET, COLOR_YELLOW
 
 
 class RunCommand(pydantic.BaseModel):
@@ -26,39 +28,40 @@ class RunCommand(pydantic.BaseModel):
                 password=self.password,
                 pkey=self._pkey,
                 port=self.port,
+                banner_timeout=5,
+                timeout=8
             )
         except paramiko.AuthenticationException:
-            print("\033[91mAuthentication failed\033[0m")
+            logger.error(f"{COLOR_RED}Authentication failed while running remote command.{COLOR_RESET}")
             exit(1)
-        except paramiko.SSHException as e:
-            print(f"\033[91mNo valid connection. Did the parent tunnel start? {e}\033[0m")
+        except paramiko.SSHException:
+            logger.debug(f"{COLOR_YELLOW}No valid connection. Did the parent tunnel start?{COLOR_RESET}")
             exit(1)
-        except Exception as e:
-            print(f"\033[91mUnexpected error: {e}\033[0m")
+        except Exception:
+            logger.debug(f"{COLOR_RED}Unexpected error while running remote command.{COLOR_RESET}")
             exit(1)
 
     def run(self, command):
         if self._client is None:
-            raise ValueError("SSH client is not connected")
+            logger.debug(f"{COLOR_RED}SSH client is not connected.{COLOR_RESET}")
         attempts = 3
         for attempt in range(attempts):
             try:
                 stdin, stdout, stderr = self.client.exec_command(command, get_pty=True, timeout=10)
-                break  # Exit the loop if successful
-            except paramiko.ssh_exception.NoValidConnectionsError as e:
+                break
+            except paramiko.SSHException:
                 if attempt == attempts - 1:
-                    # Raise an exception after the last attempt
-                    raise ValueError(f"Unable to connect to {self.host}:{self.port} after {attempts} attempts - {e}")
+                    logger.error(f"Unable to connect to {self.host}:{self.port} after {attempts} attempts.")
                 else:
-                    print(f"Attempt {attempt + 1} failed, retrying in 1 second...")
-                    time.sleep(1)  # Wait for 1 second before retrying
+                    logger.warning(f"Attempt {attempt + 1} failed, retrying in 1 second...")
+                    time.sleep(1)
 
         this_stderr: str = stderr.read().decode("utf-8").strip()
         if this_stderr != "":
-            raise ValueError(f"Error from {command}: {this_stderr}")
+            logger.error(f"{COLOR_RED}Error from {command}: {this_stderr}{COLOR_RESET}")
         this_result: str = stdout.read().decode("utf-8").strip()
         if this_result == "":
-            raise ValueError(f"No result found for: {command}")
+            logger.warning(f"{COLOR_YELLOW}No result found for: {command}{COLOR_RESET}")
         self._client.close()
         return this_result
 
@@ -66,15 +69,17 @@ class RunCommand(pydantic.BaseModel):
         key_classes = [RSAKey, DSSKey, ECDSAKey, Ed25519Key]
         for key_class in key_classes:
             try:
-                # Attempt to load the key using the current key class
                 self._pkey = key_class.from_private_key_file(
                     filename=filename, password=password
                 )
-                print(f"Loaded key using {key_class.__name__}")
+                logger.debug(f"Loaded key using {key_class.__name__}")
+                break
             except Exception as e:
-                # Print the exception for debugging purposes
-                # print(f"Tried to load with {key_class.__name__}: {e}")
-                pass
+                logger.debug(f"Failed to load with {key_class.__name__}: {e}")
+                continue
+        if not self._pkey:
+            logger.error("Failed to load private key with any supported format")
+            raise ValueError("Could not load private key")
 
     @property
     def client(self):

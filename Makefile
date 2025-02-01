@@ -27,12 +27,12 @@ clean: ## Clean the project
 	rm -rf dist/ .pytest_cache/
 	find . -name __pycache__ -delete
 
-dev: ## Run the app
-	# docker-compose up -d --build --force-recreate
-	export LOG_LEVEL=DEBUG
-	hatch run python3 . -p tests/connections_profiles/sockets.yaml connect
-	# docker-compose down
-	unset LOG_LEVEL
+dev: ## Run the app passing a profile with profile=profile_name.yml
+	if [ -z "${TUNNELGRAF_PROFILE}" ]; then \
+	  echo "Error: TUNNELGRAF_PROFILE is not set"; \
+	  exit 1; \
+	fi; \
+	LOG_LEVEL=DEBUG hatch run python3 src/ connect
 
 build: ## Build the package
 	hatch build

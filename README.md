@@ -232,6 +232,46 @@ connection profile.
 
 This will run the command on the remote host and print the output.
 
+## File Transfers
+
+Tunnelgraf supports transferring files and directories to/from remote hosts using SFTP. The transfer command uses the same tunnel configurations and credentials as other commands.
+
+To transfer files, use the `transfer` command with source and destination paths. At least one path must include a tunnel ID prefix to specify the remote location:
+
+```bash
+# Upload a local file or directory to remote host
+tunnelgraf -p <config_file> transfer ./local/path m001:/remote/path
+
+# Download from remote host to local
+tunnelgraf -p <config_file> transfer m001:/remote/path.txt ./local/directory/
+
+# Upload an entire directory recursively
+tunnelgraf -p <config_file> transfer ./local/directory/ m001:/remote/path/
+```
+
+The tunnel ID (e.g. 'm001') must match an ID defined in your connection profile. The remote path is relative to the user's home directory unless an absolute path is specified.
+
+Some examples:
+```bash
+# Upload a local directory to remote home directory
+tunnelgraf -p staging.yml transfer ./configs/ app1:./
+
+# Download a remote file to current directory  
+tunnelgraf -p prod.yml transfer db1:/etc/mysql/my.cnf ./
+
+# Upload to a specific remote location
+tunnelgraf -p dev.yml transfer ./deploy.sh web1:/opt/app/
+```
+
+The transfer command will:
+- Recursively copy directories and their contents
+- Preserve the directory structure
+- Create remote directories as needed
+- Show progress for each transferred file
+- Use the same authentication (SSH keys or passwords) as defined in the tunnel config
+
+Note: Direct transfers between two remote hosts are not supported - files must be transferred through the local system.
+
 ## Shell into a tunnel
 
 `tunnelgraf -p <config_file> -t <tunnel id> shell`

@@ -10,6 +10,9 @@ import os
 import syslog
 import signal
 import psutil
+import paramiko
+import stat
+from tunnelgraf.transfer import Transfer
 
 
 # Default arguments for all commands.
@@ -236,3 +239,24 @@ def stop(ctx) -> None:
             continue
 
     print("Tunnels are not running.")
+
+
+@cli.command(help="Transfer files to/from a remote host using a tunnel configuration.")
+@click.argument('source', type=str, required=True)
+@click.argument('destination', type=str, required=True)
+def transfer(source: str, destination: str) -> None:
+    """Transfer files between local and remote hosts using SFTP."""
+    config_file = click.get_current_context().obj["config_file"]
+    tunnels = Tunnels(config_file, connect_tunnels=False, show_credentials=True).tunnel_configs
+
+    # Get tunnel ID from source or destination
+    tunnel_id = source.split(':', 1)[0] if ':' in source else destination.split(':', 1)[0]
+
+    try:
+        tunnel_config = [t for t in tunnels if t["id"] == tunnel_id][0]
+    except IndexError:
+        print(f"Tunnel id {tunnel_id} not found.")
+        sys.exit(1)
+
+    transfer = Transfer(source, destination, tunnel_config)
+    transfer.execute()

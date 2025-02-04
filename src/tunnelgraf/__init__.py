@@ -170,14 +170,13 @@ def command(command: str) -> None:
     host = this_tunnel.get("host")
     port = this_tunnel.get("port")
     # print(f"Running command \"{command}\" on {host}:{port}...")
-    result = RunCommand(
+    RunCommand(
         host=host,
         port=port,
         identityfile=this_tunnel.get("sshkeyfile"),
         password=this_tunnel.get("sshpass"),
         user=this_tunnel.get("sshuser"),
     ).run(command)
-    print(f"{result}")
 
 
 @cli.command(

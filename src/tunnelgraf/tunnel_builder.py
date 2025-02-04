@@ -107,6 +107,7 @@ class TunnelBuilder:
             identityfile=this_tunnel_def.sshkeyfile,
             password=this_tunnel_def.sshpass,
             port=this_tunnel_def.localbindport,
+            silent=True,
         )
         return NSLookup(
             record=this_tunnel_def.nexthop.hostlookup,

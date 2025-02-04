@@ -57,17 +57,17 @@ class RunCommand(pydantic.BaseModel):
                 else:
                     logger.warning(f"Attempt {attempt + 1} failed, retrying in 1 second...")
                     time.sleep(1)
+        this_stderr: str = stderr.read().decode("utf-8").strip()
+        this_result: str = stdout.read().decode("utf-8").strip()
+        exit_code = stdout.channel.recv_exit_status()
         if not self.silent:
             # Pass along stderr
-            this_stderr: str = stderr.read().decode("utf-8").strip()
             if this_stderr != "":
                 sys.stderr.write(f"{this_stderr}\n")
             # Pass along stdout
-            this_result: str = stdout.read().decode("utf-8").strip()
             if this_result != "":
                 sys.stdout.write(f"{this_result}\n")
             # Pass along exit code
-            exit_code = stdout.channel.recv_exit_status()
             if exit_code != 0:
                 sys.exit(exit_code)
         self._client.close()

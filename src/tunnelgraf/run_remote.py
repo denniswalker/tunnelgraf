@@ -5,6 +5,7 @@ from typing import Optional
 import time
 from tunnelgraf.logger import logger
 from tunnelgraf.constants import COLOR_RED, COLOR_RESET, COLOR_YELLOW
+import sys
 
 
 class RunCommand(pydantic.BaseModel):
@@ -13,6 +14,7 @@ class RunCommand(pydantic.BaseModel):
     identityfile: Optional[str] = pydantic.Field(None, alias="identityfile")
     password: Optional[str] = pydantic.Field(None, alias="password")
     port: int = pydantic.Field(22, alias="port")
+    silent: Optional[bool] = pydantic.Field(False, alias="silent")
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -55,13 +57,19 @@ class RunCommand(pydantic.BaseModel):
                 else:
                     logger.warning(f"Attempt {attempt + 1} failed, retrying in 1 second...")
                     time.sleep(1)
-
         this_stderr: str = stderr.read().decode("utf-8").strip()
-        if this_stderr != "":
-            logger.error(f"{COLOR_RED}Error from {command}: {this_stderr}{COLOR_RESET}")
         this_result: str = stdout.read().decode("utf-8").strip()
-        if this_result == "":
-            logger.warning(f"{COLOR_YELLOW}No result found for: {command}{COLOR_RESET}")
+        exit_code = stdout.channel.recv_exit_status()
+        if not self.silent:
+            # Pass along stderr
+            if this_stderr != "":
+                sys.stderr.write(f"{this_stderr}\n")
+            # Pass along stdout
+            if this_result != "":
+                sys.stdout.write(f"{this_result}\n")
+            # Pass along exit code
+            if exit_code != 0:
+                sys.exit(exit_code)
         self._client.close()
         return this_result
 

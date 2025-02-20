@@ -6,3 +6,4 @@ build/
 .coverage
 .idea
 tunnelgraf.code-workspace
+tmp/

@@ -240,7 +240,17 @@ def stop(ctx) -> None:
     print("Tunnels are not running.")
 
 
-@cli.command(help="Transfer files to/from a remote host using a tunnel configuration.")
+@cli.command(
+    help=(
+        "Transfer files to/from a remote host using a tunnel configuration.\n\n"
+        "Arguments:\n"
+        "  source: The source path for the transfer. It can be a local path or a remote path in the format 'tunnel_id:path'.\n"
+        "  destination: The destination path for the transfer. It can be a local path or a remote path in the format 'tunnel_id:path'.\n\n"
+        "Transfer Direction:\n"
+        "  - If the source is prefixed with 'tunnel_id:', it indicates a download from the remote host to the local destination.\n"
+        "  - If the destination is prefixed with 'tunnel_id:', it indicates an upload from the local source to the remote host."
+    )
+)
 @click.argument('source', type=str, required=True)
 @click.argument('destination', type=str, required=True)
 def transfer(source: str, destination: str) -> None:
@@ -257,5 +267,6 @@ def transfer(source: str, destination: str) -> None:
         print(f"Tunnel id {tunnel_id} not found.")
         sys.exit(1)
 
+    # Instantiate the Transfer class and execute the transfer
     transfer = Transfer(source, destination, tunnel_config)
     transfer.execute()

@@ -252,6 +252,7 @@ tunnelgraf -p <config_file> transfer ./local/directory/ m001:/remote/path/
 The tunnel ID (e.g. 'm001') must match an ID defined in your connection profile. The remote path is relative to the user's home directory unless an absolute path is specified.
 
 Some examples:
+
 ```bash
 # Upload a local directory to remote home directory
 tunnelgraf -p staging.yml transfer ./configs/ app1:./
@@ -277,7 +278,6 @@ Note: Direct transfers between two remote hosts are not supported - files must b
 `tunnelgraf -p <config_file> -t <tunnel id> shell`
 
 This will open an interactive shell into the tunnel.
-
 
 ## Contributing
 

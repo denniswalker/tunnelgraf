@@ -18,6 +18,21 @@ in most SDLCs.
 Finally, it can also populate host file entries to redirect DNS names to
 localhost.
 
+## Table of Contents
+
+- [Advantages](#advantages)
+- [Getting Started](#getting-started)
+- [Example Config File](#example-config-file)
+- [Includes](#includes)
+- [Configuration Precedence](#configuration-precedence)
+- [Print the Resulting Local Configuration in JSON](#print-the-resulting-local-configuration-in-json)
+- [Print URLs](#print-urls)
+- [Resolve Remote DNS](#resolve-remote-dns)
+- [Running Commands on the Remote Host](#running-commands-on-the-remote-host)
+- [File Transfers](#file-transfers)
+- [Shell into a Node](#shell-into-a-tunnel)
+- [Contributing](#contributing)
+
 ## Advantages
 
 - Connect to arrays of sibling endpoints at any level, e.g. application servers,

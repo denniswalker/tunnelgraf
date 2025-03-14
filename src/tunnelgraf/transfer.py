@@ -4,7 +4,6 @@ Handles file transfers between local and remote hosts using SFTP.
 
 import sys
 import subprocess
-from typing
 from tunnelgraf.logger import logger
 from tunnelgraf.tunnel_definition import TunnelDefinition
 
@@ -35,7 +34,7 @@ class Transfer:
             self.is_upload = True
 
         self.tunnel_config = tunnel_config
-        self.scp_options = '-R'
+        self.scp_options = '-r'
 
     def _get_scp_path(self):
         result = subprocess.run('which scp', shell=True, capture_output=True)
@@ -95,8 +94,9 @@ class Transfer:
     def download(self) -> str:
         """Download files and directories from the remote location using sftpretty."""
         ssh_options = self._get_ssh_options(self.tunnel_config['port'])
-        cmd = f"{self.scp_path} {self.tunnel_config['sshuser']}@{self.tunnel_config['host']}:{self.remote_path}"
-        cmd = f"{cmd} {self.rsync_options} {ssh_options} {self.local_path}"
+        cmd = f"{self.scp_path} {self.scp_options} {ssh_options}" 
+        cmd = f"{cmd} {self.tunnel_config['sshuser']}@{self.tunnel_config['host']}:{self.remote_path}"
+        cmd = f"{cmd} {self.local_path}"
         if self.tunnel_config['sshpass']:
             cmd = f"{self.sshpass_path} -p {self.tunnel_config['sshpass']} {cmd}"
         return cmd
@@ -108,12 +108,23 @@ class Transfer:
         else:
             cmd = self.download()
         logger.debug(f"{cmd}")
-        result = subprocess.run(cmd, shell=True, capture_output=True)
-        stdout = result.stdout.decode("utf-8").strip()
-        stderr = result.stderr.decode("utf-8").strip()
+
+        # Split the command string into a list of arguments
+        cmd_list = cmd.split()
+        result = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+        # Print stdout line by line as the command executes
+        for line in iter(result.stdout.readline, ''):
+            print(line, end='')
+
+        result.stdout.close()
+        result.wait()  # Wait for the process to complete
+
         if result.returncode != 0:
             raise Exception(
-                f"Error running scp {self.local_path} -> {self.remote_path}; {stdout} - {stderr}"
+                f"Error running scp {self.local_path} -> {self.remote_path}; {cmd}"
             )
-        logger.info(f"{stdout}")
-        logger.info(f"Uploaded file(s): {self.local_path} -> {self.remote_path}")
+        if self.is_upload:
+            logger.info(f"Uploaded file(s): {self.local_path} -> {self.tunnel_id}:{self.remote_path}")
+        else:
+            logger.info(f"Downloaded file(s): {self.tunnel_id}:{self.remote_path} -> {self.local_path}")

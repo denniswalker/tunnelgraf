@@ -7,3 +7,5 @@ build/
 .idea
 tunnelgraf.code-workspace
 tmp/
+.vscode/
+.venv/

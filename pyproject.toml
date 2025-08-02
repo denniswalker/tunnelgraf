@@ -58,6 +58,10 @@ Documentation = "https://github.com/denniswalker/tunnelgraf/blob/main/README.md"
 Repository = "https://github.com/denniswalker/tunnelgraf"
 Issues = "https://github.com/denniswalker/tunnelgraf/issues"
 
+[tool.hatch.envs.default]
+type = "virtual"
+path = ".venv"
+
 [tool.hatch.envs.test]
 dependencies = [
   "coverage[toml]",

@@ -250,7 +250,7 @@ def stop(ctx) -> None:
         "  - If the source is prefixed with 'tunnel_id:', it indicates a download from the remote host to the local destination.\n"
         "  - If the destination is prefixed with 'tunnel_id:', it indicates an upload from the local source to the remote host.\n\n"
         "Tunnel Selection:\n"
-        "  - Use --tunnel-id to explicitly specify which tunnel to use for the transfer.\n"
+        "  - Use --tunnel-id to explicitly specify which tunnel to use for the scp operation.\n"
         "  - If --tunnel-id is not provided, the tunnel ID will be extracted from the source or destination path."
     )
 )

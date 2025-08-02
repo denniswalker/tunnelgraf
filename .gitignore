@@ -6,3 +6,12 @@ build/
 .coverage
 .idea
 tunnelgraf.code-workspace
+tmp/
+.vscode/
+.venv/
+
+# Test artifacts and temporary files
+downloaded_*
+test_dir/
+*.test
+*.tmp

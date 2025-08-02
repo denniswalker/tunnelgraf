@@ -213,10 +213,8 @@ class Tunnels:
 
     def _add_to_processed_configs(self, this_tunnel_def: TunnelDefinition):
         """Adds a tunnel to the processed configs."""
-        if not any(this_tunnel_def.id == t["id"] for t in self.tunnel_configs):
-            self.tunnel_configs.append(
-                this_tunnel_def.model_dump(exclude=self._excluded_fields)
-            )
+        if not any(this_tunnel_def.id == t.id for t in self.tunnel_configs):
+            self.tunnel_configs.append(this_tunnel_def)
 
     def stop_tunnels(self):
         """Stops all tunnels."""

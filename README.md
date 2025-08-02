@@ -18,6 +18,21 @@ in most SDLCs.
 Finally, it can also populate host file entries to redirect DNS names to
 localhost.
 
+## Table of Contents
+
+- [Advantages](#advantages)
+- [Getting Started](#getting-started)
+- [Example Config File](#example-config-file)
+- [Includes](#includes)
+- [Configuration Precedence](#configuration-precedence)
+- [Print the Resulting Local Configuration in JSON](#print-the-resulting-local-configuration-in-json)
+- [Print URLs](#print-urls)
+- [Resolve Remote DNS](#resolve-remote-dns)
+- [Running Commands on the Remote Host](#running-commands-on-the-remote-host)
+- [File Copying (SCP)](#file-copying-scp)
+- [Shell into a Node](#shell-into-a-tunnel)
+- [Contributing](#contributing)
+
 ## Advantages
 
 - Connect to arrays of sibling endpoints at any level, e.g. application servers,
@@ -232,12 +247,61 @@ connection profile.
 
 This will run the command on the remote host and print the output.
 
+## File Copying (SCP)
+
+Tunnelgraf supports copying files and directories to/from remote hosts using SCP (Secure Copy Protocol). The scp command uses the same tunnel configurations and credentials as other commands.
+
+To copy files, use the `scp` command with source and destination paths. At least one path must include a tunnel ID prefix to specify the remote location:
+
+```bash
+# Upload a local file or directory to remote host
+tunnelgraf -p <config_file> scp ./local/path m001:/remote/path
+
+# Download from remote host to local
+tunnelgraf -p <config_file> scp m001:/remote/path.txt ./local/directory/
+
+# Upload an entire directory recursively
+tunnelgraf -p <config_file> scp ./local/directory/ m001:/remote/path/
+```
+
+The tunnel ID (e.g. 'm001') must match an ID defined in your connection profile. The remote path is relative to the user's home directory unless an absolute path is specified.
+
+Some examples:
+
+```bash
+# Upload a local directory to remote home directory
+tunnelgraf -p staging.yml scp ./configs/ app1:./
+
+# Download a remote file to current directory  
+tunnelgraf -p prod.yml scp db1:/etc/mysql/my.cnf ./
+
+# Upload to a specific remote location
+tunnelgraf -p dev.yml scp ./deploy.sh web1:/opt/app/
+```
+
+The scp command will:
+
+- Recursively copy directories and their contents
+- Preserve the directory structure and file timestamps (`-p` flag)
+- Create remote directories as needed
+- Show verbose progress output (`-v` flag)
+- Use compression for better performance over slow connections (`-C` flag)
+- Validate local paths before upload operations
+- Use the same authentication (SSH keys or passwords) as defined in the tunnel config
+- Provide detailed error messages and success confirmations
+
+Note: Direct transfers between two remote hosts are not supported - files must be transferred through the local system.
+
+**Requirements:**
+- SCP must be installed (usually comes with OpenSSH client)
+- sshpass is required if using password authentication
+- Both tools must be available in the system PATH
+
 ## Shell into a tunnel
 
 `tunnelgraf -p <config_file> -t <tunnel id> shell`
 
 This will open an interactive shell into the tunnel.
-
 
 ## Contributing
 

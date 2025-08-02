@@ -10,6 +10,9 @@ import os
 import syslog
 import signal
 import psutil
+import paramiko
+import stat
+from tunnelgraf.transfer import Transfer
 
 
 # Default arguments for all commands.
@@ -111,13 +114,13 @@ def show(show_credentials: bool) -> None:
     if tunnel_id:
         try:
             this_tunnel = [
-                tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
+                tunnel for tunnel in tunnels if tunnel_id == tunnel.id][0]
         except IndexError:
             print(f"Tunnel id {tunnel_id} not found.")
             sys.exit(1)
-        print(json.dumps(this_tunnel, indent=4))
+        print(json.dumps(this_tunnel.model_dump(), indent=4))
     else:
-        print(json.dumps(tunnels, indent=4))
+        print(json.dumps([t.model_dump() for t in tunnels], indent=4))
 
 
 @cli.command(
@@ -128,21 +131,21 @@ def urls() -> None:
     tunnels = Tunnels(config_file, connect_tunnels=False).tunnel_configs
     links: dict = {}
     for tunnel in tunnels:
-        links[tunnel["id"]]: list = []
-        if "hosts_file_entry" in tunnel.keys() and tunnel["hosts_file_entry"]:
-            host = tunnel["hosts_file_entry"]
-            links[tunnel["id"]].append(
-                f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+        links[tunnel.id]: list = []
+        if tunnel.hosts_file_entry:
+            host = tunnel.hosts_file_entry
+            links[tunnel.id].append(
+                f"{tunnel.protocol}://{host}:{tunnel.port}"
             )
-        elif "hosts_file_entries" in tunnel.keys() and tunnel["hosts_file_entries"]:
-            for hosts_entry in tunnel["hosts_file_entries"]:
-                links[tunnel["id"]].append(
-                    f"{tunnel['protocol']}://{hosts_entry}:{tunnel['port']}"
+        elif tunnel.hosts_file_entries:
+            for hosts_entry in tunnel.hosts_file_entries:
+                links[tunnel.id].append(
+                    f"{tunnel.protocol}://{hosts_entry}:{tunnel.port}"
                 )
         else:
-            host = tunnel["host"]
-            links[tunnel["id"]].append(
-                f"{tunnel['protocol']}://{host}:{tunnel['port']}"
+            host = tunnel.host
+            links[tunnel.id].append(
+                f"{tunnel.protocol}://{host}:{tunnel.port}"
             )
     print(json.dumps(links, indent=4))
 
@@ -163,19 +166,19 @@ def command(command: str) -> None:
     ).tunnel_configs
     try:
         this_tunnel = [
-            tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
+            tunnel for tunnel in tunnels if tunnel_id == tunnel.id][0]
     except IndexError:
         print(f"Tunnel id {tunnel_id} not found.")
         sys.exit(1)
-    host = this_tunnel.get("host")
-    port = this_tunnel.get("port")
+    host = this_tunnel.host
+    port = this_tunnel.port
     # print(f"Running command \"{command}\" on {host}:{port}...")
     RunCommand(
         host=host,
         port=port,
-        identityfile=this_tunnel.get("sshkeyfile"),
-        password=this_tunnel.get("sshpass"),
-        user=this_tunnel.get("sshuser"),
+        identityfile=this_tunnel.sshkeyfile,
+        password=this_tunnel.sshpass,
+        user=this_tunnel.sshuser,
     ).run(command)
 
 
@@ -190,16 +193,16 @@ def shell() -> None:
     ).tunnel_configs
     try:
         this_tunnel = [
-            tunnel for tunnel in tunnels if tunnel_id == tunnel["id"]][0]
+            tunnel for tunnel in tunnels if tunnel_id == tunnel.id][0]
     except IndexError:
         print(f"Tunnel id {tunnel_id} not found.")
         sys.exit(1)
     InteractiveSSHSession(
-        host=this_tunnel.get("host"),
-        port=this_tunnel.get("port"),
-        identityfile=this_tunnel.get("sshkeyfile"),
-        password=this_tunnel.get("sshpass"),
-        user=this_tunnel.get("sshuser"),
+        host=this_tunnel.host,
+        port=this_tunnel.port,
+        identityfile=this_tunnel.sshkeyfile,
+        password=this_tunnel.sshpass,
+        user=this_tunnel.sshuser,
     ).start_interactive_session()
 
 
@@ -235,3 +238,56 @@ def stop(ctx) -> None:
             continue
 
     print("Tunnels are not running.")
+
+
+@cli.command(
+    help=(
+        "Copy files to/from a remote host using SCP and tunnel configuration.\n\n"
+        "Arguments:\n"
+        "  source: The source path for the copy. It can be a local path or a remote path in the format 'tunnel_id:path'.\n"
+        "  destination: The destination path for the copy. It can be a local path or a remote path in the format 'tunnel_id:path'.\n\n"
+        "Copy Direction:\n"
+        "  - If the source is prefixed with 'tunnel_id:', it indicates a download from the remote host to the local destination.\n"
+        "  - If the destination is prefixed with 'tunnel_id:', it indicates an upload from the local source to the remote host.\n\n"
+        "Tunnel Selection:\n"
+        "  - Use --tunnel-id to explicitly specify which tunnel to use for the scp operation.\n"
+        "  - If --tunnel-id is not provided, the tunnel ID will be extracted from the source or destination path."
+    )
+)
+@click.argument('source', type=str, required=True)
+@click.argument('destination', type=str, required=True)
+def scp(source: str, destination: str) -> None:
+    """Copy files between local and remote hosts using SCP."""
+    config_file = click.get_current_context().obj["config_file"]
+    tunnel_id = click.get_current_context().obj["tunnel_id"]
+    tunnels = Tunnels(config_file, connect_tunnels=False, show_credentials=True).tunnel_configs
+
+    # Determine which tunnel to use
+    if tunnel_id:
+        # Use the explicitly specified tunnel-id
+        try:
+            tunnel_config = [t for t in tunnels if t.id == tunnel_id][0]
+        except IndexError:
+            print(f"Tunnel id {tunnel_id} not found.")
+            sys.exit(1)
+    else:
+        # Fall back to extracting tunnel ID from source or destination
+        extracted_tunnel_id = None
+        if ':' in source:
+            extracted_tunnel_id = source.split(':', 1)[0]
+        elif ':' in destination:
+            extracted_tunnel_id = destination.split(':', 1)[0]
+        
+        if not extracted_tunnel_id:
+            print("Error: Either specify --tunnel-id or use tunnel_id:path format in source/destination")
+            sys.exit(1)
+            
+        try:
+            tunnel_config = [t for t in tunnels if t.id == extracted_tunnel_id][0]
+        except IndexError:
+            print(f"Tunnel id {extracted_tunnel_id} not found.")
+            sys.exit(1)
+
+    # Instantiate the Transfer class and execute the transfer
+    transfer = Transfer(source, destination, tunnel_config, tunnel_id)
+    transfer.execute()

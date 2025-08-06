@@ -26,24 +26,27 @@ class TunnelBuilder:
             raise ValueError(
                 "TunnelDefinition must have a nexthop when creating a tunnel."
             )
+        self.tunnel_kwargs: dict = {}
         if self.tunnel_config.proxycommand is not None:
             self.tunnel_kwargs["ssh_proxy"] = paramiko.ProxyCommand(
                 self.tunnel_config.proxycommand
             )
         if self.tunnel_config.nexthop.hostlookup:
             self.tunnel_config.nexthop.host = self._lookup_host(self.tunnel_config)
-        self.tunnel_kwargs: dict = {
-            "compression": True,
-            "ssh_username": self.tunnel_config.sshuser,
-            "remote_bind_address": (
-                self.tunnel_config.nexthop.host,
-                self.tunnel_config.nexthop.port,
-            ),
-            "local_bind_address": (
-                self.tunnel_config.nexthop.localbindaddress,
-                self.tunnel_config.nexthop.localbindport,
-            ),
-        }
+        self.tunnel_kwargs.update(
+            {
+                "compression": True,
+                "ssh_username": self.tunnel_config.sshuser,
+                "remote_bind_address": (
+                    self.tunnel_config.nexthop.host,
+                    self.tunnel_config.nexthop.port,
+                ),
+                "local_bind_address": (
+                    self.tunnel_config.nexthop.localbindaddress,
+                    self.tunnel_config.nexthop.localbindport,
+                ),
+            }
+        )
         if self.tunnel_config.sshkeyfile is not None:
             logger.debug("sshkeyfile present, using it instead of password.")
             self.tunnel_kwargs["ssh_pkey"] = self.tunnel_config.sshkeyfile

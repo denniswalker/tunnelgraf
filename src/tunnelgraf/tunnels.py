@@ -161,7 +161,7 @@ class Tunnels:
     @config_file.setter
     def config_file(self, cf: str):
         """Sets the config file."""
-        if not cf or isinstance(cf, str):
+        if not cf or not isinstance(cf, str):
             raise ValueError("Config file must not be blank.")
         if not os.path.isfile(cf):
             raise ValueError(f"Config file {cf} does not exist.")

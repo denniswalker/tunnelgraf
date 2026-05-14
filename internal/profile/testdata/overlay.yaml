@@ -1,0 +1,7 @@
+---
+id: overlay_bastion
+port: 22
+sshuser: overlay_user
+sshkeyfile: /tmp/overlay_key
+localbindport: 2223
+include: base.yaml

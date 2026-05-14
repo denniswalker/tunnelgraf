@@ -47,9 +47,11 @@ localhost.
 
 ---
 
-1. Install tunnelgraf with pip `pip3 install tunnelgraf`. If you run into
-   dependency conflicts with other packages, use pipx insteadi, e.g.
-   `pipx install tunnelgraf`.
+1. Install tunnelgraf. With Go 1.26+ installed, run
+   `go install github.com/denniswalker/tunnelgraf/cmd/tunnelgraf@latest`.
+   Alternatively, clone this repository and run `make build` to produce a
+   binary at `./bin/tunnelgraf`, or `make install` to install into
+   `$GOBIN`/`$GOPATH/bin`.
 1. Create a yaml file describing the connection hierarchy (reference the config
    example below).
 1. Recommended: For personal computers, change the permissions of the hosts file
@@ -249,9 +251,15 @@ This will run the command on the remote host and print the output.
 
 ## File Copying (SCP)
 
-Tunnelgraf supports copying files and directories to/from remote hosts using SCP (Secure Copy Protocol). The scp command uses the same tunnel configurations and credentials as other commands.
+Tunnelgraf supports copying files and directories to/from remote hosts. The
+`scp` command runs in-process over SFTP — no `scp` or `sshpass` binary is
+required on the system PATH — and reuses the same tunnel configurations and
+credentials as other commands.
 
-To copy files, use the `scp` command with source and destination paths. At least one path must include a tunnel ID prefix to specify the remote location:
+To copy files, use the `scp` command with source and destination paths. At
+least one path must include a tunnel ID prefix to specify the remote
+location, or `--tunnel-id`/`-t` may be supplied for an upload with bare
+paths on both sides:
 
 ```bash
 # Upload a local file or directory to remote host
@@ -272,7 +280,7 @@ Some examples:
 # Upload a local directory to remote home directory
 tunnelgraf -p staging.yml scp ./configs/ app1:./
 
-# Download a remote file to current directory  
+# Download a remote file to current directory
 tunnelgraf -p prod.yml scp db1:/etc/mysql/my.cnf ./
 
 # Upload to a specific remote location
@@ -282,20 +290,14 @@ tunnelgraf -p dev.yml scp ./deploy.sh web1:/opt/app/
 The scp command will:
 
 - Recursively copy directories and their contents
-- Preserve the directory structure and file timestamps (`-p` flag)
-- Create remote directories as needed
-- Show verbose progress output (`-v` flag)
-- Use compression for better performance over slow connections (`-C` flag)
-- Validate local paths before upload operations
-- Use the same authentication (SSH keys or passwords) as defined in the tunnel config
+- Preserve file timestamps and create remote directories as needed
+- Use the same authentication (SSH keys or passwords) as defined in the
+  tunnel config
+- Verify the host key against `~/.ssh/known_hosts` (use
+  `--insecure-host-keys` to skip verification)
 - Provide detailed error messages and success confirmations
 
 Note: Direct transfers between two remote hosts are not supported - files must be transferred through the local system.
-
-**Requirements:**
-- SCP must be installed (usually comes with OpenSSH client)
-- sshpass is required if using password authentication
-- Both tools must be available in the system PATH
 
 ## Shell into a tunnel
 
@@ -305,6 +307,15 @@ This will open an interactive shell into the tunnel.
 
 ## Contributing
 
-Integration tests depend on Docker and docker-compose.
+Tunnelgraf is written in Go (module `github.com/denniswalker/tunnelgraf`,
+Go 1.26+). Common targets are wired up in the `Makefile`:
 
-Fork repo. Run tests `make test`. Open PR once tests pass.
+- `make build` — build the binary into `./bin/tunnelgraf`
+- `make test` — run unit tests
+- `make test-race` — run unit tests with the race detector and coverage
+- `make test-integration` — run the integration suite (requires Docker and
+  docker-compose)
+- `make lint` / `make vet` / `make fmt-check` — static checks
+
+Fork the repo. Run `make test` (and `make test-integration` if your change
+touches networking). Open a PR once tests pass.

@@ -1,0 +1,9 @@
+---
+id: base_bastion
+localbindport: 9999
+nexthops:
+  - id: defaulted_node
+    host: node.example.com
+    port: 443
+    localbindport: 8443
+    hosts_file_entry: node.example.com

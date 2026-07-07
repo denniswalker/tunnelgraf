@@ -47,11 +47,32 @@ localhost.
 
 ---
 
-1. Install tunnelgraf. With Go 1.26+ installed, run
-   `go install github.com/denniswalker/tunnelgraf/cmd/tunnelgraf@latest`.
-   Alternatively, clone this repository and run `make build` to produce a
-   binary at `./bin/tunnelgraf`, or `make install` to install into
-   `$GOBIN`/`$GOPATH/bin`.
+1. Install tunnelgraf. Requires Go 1.26+ (`go version` to check;
+   [go.dev/dl](https://go.dev/dl/) to install). Pick one of:
+
+   - **Quick install, no clone needed:**
+
+     ```bash
+     go install github.com/denniswalker/tunnelgraf/cmd/tunnelgraf@latest
+     ```
+
+   - **From a local clone** (for building a specific branch, or testing local
+     changes):
+
+     ```bash
+     git clone https://github.com/denniswalker/tunnelgraf.git
+     cd tunnelgraf
+     make build    # builds ./bin/tunnelgraf only; doesn't touch $PATH
+     make install  # builds and installs into $GOBIN (or $GOPATH/bin)
+     ```
+
+   Both `go install` and `make install` place the binary in `$(go env GOBIN)`,
+   falling back to `$(go env GOPATH)/bin` (typically `~/go/bin`) when `GOBIN`
+   isn't set. Make sure that directory is on your `$PATH` — add
+   `export PATH="$PATH:$(go env GOPATH)/bin"` to your shell profile
+   (`~/.zshrc`, `~/.bashrc`, etc.) if it isn't already there.
+1. Verify the install: `tunnelgraf --help` should print the list of
+   subcommands (`connect`, `show`, `urls`, `command`, `shell`, `scp`).
 1. Create a yaml file describing the connection hierarchy (reference the config
    example below).
 1. Recommended: For personal computers, change the permissions of the hosts file

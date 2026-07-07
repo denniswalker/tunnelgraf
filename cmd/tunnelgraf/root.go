@@ -19,6 +19,7 @@ func newRootCmd() *cobra.Command {
 		Use:           "tunnelgraf",
 		Short:         "Hierarchical SSH tunnel management",
 		Long:          "Connect through a graph of bastion hosts to many remote endpoints, exposing them as local ports.",
+		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}

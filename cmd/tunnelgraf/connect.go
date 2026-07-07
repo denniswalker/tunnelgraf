@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
+	"github.com/denniswalker/tunnelgraf/internal/hostsfile"
+	"github.com/denniswalker/tunnelgraf/internal/profile"
 	tgssh "github.com/denniswalker/tunnelgraf/internal/ssh"
 	"github.com/denniswalker/tunnelgraf/internal/tui"
 	"github.com/denniswalker/tunnelgraf/internal/tunnel"
@@ -20,6 +22,8 @@ func newConnectCmd(g *globalFlags) *cobra.Command {
 		insecure       bool
 		knownHostsPath string
 		noTUI          bool
+		noHostsFile    bool
+		hostsFilePath  string
 	)
 	cmd := &cobra.Command{
 		Use:   "connect",
@@ -49,9 +53,10 @@ func newConnectCmd(g *globalFlags) *cobra.Command {
 				return fmt.Errorf("host-key callback: %w", err)
 			}
 
+			dialer := &tgssh.Dialer{HostKey: hk}
 			events := make(chan tunnel.Event, 128)
 			mgr := tunnel.New(root, tunnel.Options{
-				Dialer: &tgssh.Dialer{HostKey: hk},
+				Dialer: dialer,
 				Log:    log,
 				Events: events,
 			})
@@ -63,8 +68,20 @@ func newConnectCmd(g *globalFlags) *cobra.Command {
 				return err
 			}
 
+			if !noHostsFile {
+				hm := hostsfile.New(hostsFilePath)
+				if err := hm.Apply(hostsFileNames(root)); err != nil {
+					log.Warn("hosts file not updated", "err", err)
+				}
+				defer func() {
+					if err := hm.Restore(); err != nil {
+						log.Warn("hosts file not restored", "err", err)
+					}
+				}()
+			}
+
 			if useTUI {
-				err = tui.Run(ctx, root, events)
+				err = tui.Run(ctx, root, events, dialer)
 			} else {
 				fmt.Fprintf(os.Stderr, "Tunnels started: %d forward(s). Ctrl-C to stop.\n", mgr.TunnelCount())
 				go drainEvents(events, log)
@@ -79,7 +96,22 @@ func newConnectCmd(g *globalFlags) *cobra.Command {
 	cmd.Flags().BoolVar(&insecure, "insecure-host-keys", false, "Skip SSH host-key verification (dangerous; for ephemeral test hosts)")
 	cmd.Flags().StringVar(&knownHostsPath, "known-hosts", "", "Override the known_hosts path (default: ~/.config/tunnelgraf/known_hosts)")
 	cmd.Flags().BoolVar(&noTUI, "no-tui", false, "Disable the live dashboard even when stdout is a terminal")
+	cmd.Flags().BoolVar(&noHostsFile, "no-hosts-file", false, "Don't add hosts_file_entry(ies) to the hosts file")
+	cmd.Flags().StringVar(&hostsFilePath, "hosts-file", hostsfile.DefaultPath(), "Override the hosts file path")
 	return cmd
+}
+
+// hostsFileNames flattens the profile and collects every
+// hosts_file_entry / hosts_file_entries value in tree order.
+func hostsFileNames(root *profile.Node) []string {
+	var names []string
+	for _, e := range profile.Flatten(root, profile.FlattenOptions{}) {
+		if e.HostsFileEntry != "" {
+			names = append(names, e.HostsFileEntry)
+		}
+		names = append(names, e.HostsFileEntries...)
+	}
+	return names
 }
 
 // drainEvents keeps the manager's events channel from blocking when

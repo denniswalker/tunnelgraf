@@ -1,17 +1,19 @@
-.mypy_cache
 *.yml
-__pycache__
-dist
-build/
-.coverage
 .idea
 tunnelgraf.code-workspace
 tmp/
 .vscode/
-.venv/
 
 # Test artifacts and temporary files
 downloaded_*
 test_dir/
 *.test
 *.tmp
+
+# Go build artifacts
+/tunnelgraf
+/bin/
+coverage.out
+.logs
+.coverage
+.opencode

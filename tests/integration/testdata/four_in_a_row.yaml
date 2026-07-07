@@ -1,0 +1,33 @@
+---
+id: bastion
+host: localhost
+port: 2222
+sshuser: root
+sshpass: tunnelgraf
+localbindaddress: "127.0.0.1"
+localbindport: 2223
+protocol: ssh
+nexthop:
+  id: sshd1
+  host: sshd1
+  port: 22
+  sshuser: root
+  sshpass: tunnelgraf
+  localbindaddress: "127.0.0.1"
+  localbindport: 2224
+  protocol: ssh
+  nexthop:
+    id: sshd2
+    host: sshd2
+    port: 22
+    sshuser: root
+    sshpass: tunnelgraf
+    localbindaddress: "127.0.0.1"
+    localbindport: 2225
+    protocol: ssh
+    nexthop:
+      id: nginx
+      host: nginx
+      port: 80
+      localbindport: 2080
+      protocol: ssh
